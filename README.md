@@ -33,11 +33,17 @@ A smart light control for pet cages with simple and easy to use WebUI.
 
 
 # BUILD
-* TODO ADD
+## Open the downloaded sketch (`src/cage_light`) and see the pin config or change it!
+* connect the input of the step down converter to the power supply
+* connect the output of the step down converter to the VI and GND of the ESP8266 board
+* connect the step down converter to VCC and GND of the relays board
+* connect 3.3V and GND from the ESP8266 board to the power pins of the RTC module
+* connect the I2C interface from the RTC module to the in the config set pins of the ESP8266 board
+* connect the in the config set pins for the relay outputs of the ESP8266 board to the channel input of the relais
 
 # SOFTWARE SETUP
 * add the esp8266 board url to the additional board in your arduino ide :  http://arduino.esp8266.com/stable/package_esp8266com_index.json
-* download the sketch located atd `src/cage_light/`
+* download the sketch located at `src/cage_light/`
 * [ edit the pin config to your connected pins (first lines) ]
 * upload the sketch to the ESP8266 board
 * show at startu over the serial port the given IP of the board
