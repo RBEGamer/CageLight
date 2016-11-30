@@ -13,10 +13,11 @@ A smart light control for pet cages with simple and easy to use WebUI.
 
 
 # PARTS
-* ESP8266 module (I used the NodeMCU V1 board with usb and power converter)
+* ESP8266 module (I used the NodeMCU V1 board)
 * 2 channel relais card
 * DS1307 RTC module with backup battery 
 * 12V power supply (12V for the led strips)
+* [ I used a small 5V step down converter for the esp and relays]
 * some wood/plastic odds for mounting the stuff
 * luster terminals
 
