@@ -1,6 +1,7 @@
 # CageLight
 A smart light control for pet cages with simple and easy to use WebUI.
 
+## See the images below
 
 #### Please not the software is not really clean at this time because it was a one day project and WIP!
 
