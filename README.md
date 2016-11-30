@@ -46,4 +46,4 @@ A smart light control for pet cages with simple and easy to use WebUI.
 ### FINAL UNIT WITH NO CASE
 ![Gopher image](/documentation/images/final_build.jpeg)
 ### BASIC WEB UI
-![Gopher image](/documentation/images/webui.jpeg)
+![Gopher image](/documentation/images/webui.png)
