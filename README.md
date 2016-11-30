@@ -10,7 +10,7 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * Low cost ESP8266 powered
 * WebUI
 * RTC for automatic mode
-
+* easy to use http-get api
 
 # PARTS
 * ESP8266 module (I used the NodeMCU V1 board)
