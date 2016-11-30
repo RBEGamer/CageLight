@@ -41,4 +41,6 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * upload the sketch to the ESP8266 board
 * show at startu over the serial port the given IP of the board
 
-
+# IMAGES
+### FINAL UNIT WITH NO CASE
+![Gopher image](/documentation/images/final_build.jpeg)
