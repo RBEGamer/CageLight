@@ -43,7 +43,7 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * connect the in the config set pins for the relay outputs of the ESP8266 board to the channel input of the relais
 
 # SOFTWARE SETUP
-#### Please not the software is not really clean at this time because it was a one day project and WIP!
+#### Please note the software is not really clean at this time because it was a one day project and WIP!
 * add the esp8266 board url to the additional board in your arduino ide :  http://arduino.esp8266.com/stable/package_esp8266com_index.json
 * download the sketch located at `src/cage_light/`
 * [ edit the pin config to your connected pins (first lines) ]
