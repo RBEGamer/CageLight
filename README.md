@@ -34,7 +34,7 @@ A smart light control for pet cages with simple and easy to use WebUI.
 
 
 # BUILD
-## Open the downloaded sketch (`src/cage_light`) and see the pin config or change it!
+* Open the downloaded sketch (`src/cage_light`) and see the pin config or change it!
 * connect the input of the step down converter to the power supply
 * connect the output of the step down converter to the VI and GND of the ESP8266 board
 * connect the step down converter to VCC and GND of the relays board
