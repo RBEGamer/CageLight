@@ -48,7 +48,7 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * download the sketch located at `src/cage_light/`
 * [ edit the pin config to your connected pins (first lines) ]
 * upload the sketch to the ESP8266 board
-* show at startu over the serial port the given IP of the board
+* show at startup over the serial port the given IP of the board (or check your router)
 
 # IMAGES
 ### FINAL UNIT WITH NO CASE
