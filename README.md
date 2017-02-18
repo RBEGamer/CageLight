@@ -22,6 +22,7 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * some wood/plastic odds for mounting the stuff
 * luster terminals
 * [ the 3d printed case (located at `documentation/cage_light.skp` - Sketchup) ]
+
 ### OPTIONAL STUFF
 * a dyndns provider if you have not a static ip adress and you want to access the system from outside of you lan
 
