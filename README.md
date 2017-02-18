@@ -35,6 +35,11 @@ A smart light control for pet cages with simple and easy to use WebUI.
 
 
 # BUILD
+
+## 3D PRINT
+Print the both stl-files. Basic settings are 0.2mm layerheight, no support, no raft, heatplate is recommented
+
+## HARDWARE
 * Open the downloaded sketch (`src/cage_light`) and see the pin config or change it!
 * connect the input of the step down converter to the power supply
 * connect the output of the step down converter to the `VI` and `GND` of the ESP8266 board
@@ -43,8 +48,6 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * connect the I2C interface from the RTC module to the in the config set pins of the ESP8266 board
 * connect the in the config set pins for the relay outputs of the ESP8266 board to the channel input of the relais
 
-## 3D PRINT
-Print the both stl-files. Basic settings are 0.2mm layerheight, no support, no raft, heatplate is recommented
 
 # SOFTWARE SETUP
 #### Please note the software is not really clean at this time because it was a one day project and WIP!
