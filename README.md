@@ -21,7 +21,7 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * [ I used a small 5V step down converter for the esp and relays]
 * some wood/plastic odds for mounting the stuff
 * luster terminals
-
+* [ the 3d printed case (located at `documentation/cage_light.skp` - Sketchup) ]
 ### OPTIONAL STUFF
 * a dyndns provider if you have not a static ip adress and you want to access the system from outside of you lan
 
@@ -30,15 +30,16 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * soldering stuff
 * hot glue
 * wires, ....
+* a 3D Printer for the case (optional)
 
 
 
 # BUILD
 * Open the downloaded sketch (`src/cage_light`) and see the pin config or change it!
 * connect the input of the step down converter to the power supply
-* connect the output of the step down converter to the VI and GND of the ESP8266 board
-* connect the step down converter to VCC and GND of the relays board
-* connect 3.3V and GND from the ESP8266 board to the power pins of the RTC module
+* connect the output of the step down converter to the `VI` and `GND` of the ESP8266 board
+* connect the step down converter to `VCC` and `GND of the relays board
+* connect `3.3V` and `GND` from the ESP8266 board to the power pins of the RTC module
 * connect the I2C interface from the RTC module to the in the config set pins of the ESP8266 board
 * connect the in the config set pins for the relay outputs of the ESP8266 board to the channel input of the relais
 
