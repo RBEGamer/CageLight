@@ -20,12 +20,11 @@ const int relay_1 = 12; //pin of channel 2 relay
 #define PIN SDA 5
 #define SERIAL_BAUD_RATE 115200
 #define MDNS_NAME "cagelight" //for eg abc.local...
-
 //EDIT YOUR ACCESS POINTS HERE
 void setup_wifi(){
-    /* SSID NO !"§... */
+    /* SSID NO !"§...  like FRITZ!BOX -> FRITZBOX*/
     wifiMulti.addAP("test_wifi", "213546");
-    wifiMulti.addAP("test_wifi_1", "213456");
+    //wifiMulti.addAP("test_wifi_1", "213456");
   }
 // END CONFIG ---------------------------------
 
@@ -40,7 +39,7 @@ ESP8266WebServer server ( WEBSERVER_PORT );
 //TIME SEKUNDE
 int sekunde, minute, stunde, tag, wochentag, monat, jahr, tag_index;
 
-String wochentage[7] = { "Sunday", "Monday", "Thuesday", "Wednesday", "Thirstday", "Friday", "Saturday"};
+const String wochentage[7] = { "Sunday", "Monday", "Thuesday", "Wednesday", "Thirstday", "Friday", "Saturday"};
 int on_off_times[7][2] = { {8,22} };
 bool on_off_enabled = true;
 
@@ -155,7 +154,7 @@ void handleRoot() {
 
 String time_message = "TIME : ";
 time_message += "<form name = 'btn_time_set' action = '/' method = 'GET'>";
-time_message += "Current Time : <input type='number' name='date_d' min='0' max='31' value='" + String(tag) + "'/>.<input type='number' name='date_m' min='0' max='12' value='" + String(monat) + "'/>.<input type='number' name='date_y' min='0' max='99' value='" + String(jahr) + "'/> (" + wochentage[wochentag] +")  <input type='number' name='time_h' min='0' max='23' value='" + String(stunde) + "'/>:<input type='number' name='time_m' min='0' max='59' value='" + String(minute) + "'/>:<input type='number' name='time_s' min='0' max='59' value='" + String(sekunde) + "'/><input type='submit' value='SAVE TIME'/>";
+time_message += "Current Time : <input type='number' name='date_d' min='0' max='31' value='" + String(tag) + "'/>.<input type='number' name='date_m' min='0' max='12' value='" + String(monat) + "'/>.<input type='number' name='date_y' min='0' max='99' value='" + String(jahr) + "'/> (" + wochentage[wochentag] +") <br /> <input type='number' name='time_h' min='0' max='23' value='" + String(stunde) + "'/>:<input type='number' name='time_m' min='0' max='59' value='" + String(minute) + "'/>:<input type='number' name='time_s' min='0' max='59' value='" + String(sekunde) + "'/><br /><input type='submit' value='SAVE TIME'/>";
 time_message += "</form>";
 
 
@@ -369,13 +368,11 @@ String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "<td>&lt; hour&gt </td>"
 "<td>Set the light off hour at sunday<br></td>"
 "</tr>"
-
 "<tr>"
 "<td>sched_enable</td>"
 "<td> </td>"
 "<td>Enabled the timer<br></td>"
 "</tr>"
-
 "<tr>"
 "<td>sched_disable</td>"
 "<td> </td>"
@@ -389,7 +386,6 @@ String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 
 String msg = "";
 msg = phead_1 + WEBSITE_TITLE + phead_2 + pstart + time_message + control_forms +api_calls + pend;
-
 
 
   String message = "";
@@ -417,7 +413,6 @@ volatile bool was_timer_changes = false;
    relay_0_state = 0;
    relay_1_state = 0;
    }
-
       if(server.argName(i) == "ls" && server.arg(i) == "one_on"){
    digitalWrite(relay_0, 0);
    relay_0_state = 1;
@@ -564,7 +559,7 @@ void handleNotFound() {
 void setup ( void ) {
   //READ TIMES
   EEPROM.begin(512);
-#ifdef  _DEBUG
+#if defined(_DEBUG)
   EEPROM.write(0, 8);
   EEPROM.write(1, 22);
   EEPROM.write(2, 8);
@@ -585,7 +580,7 @@ void setup ( void ) {
 
 
 
-
+//READ SCHEDULE TIMES
   on_off_times[0][0] = EEPROM.read(0);
   on_off_times[0][1] = EEPROM.read(1);
   on_off_times[1][0] = EEPROM.read(2);
@@ -605,8 +600,6 @@ void setup ( void ) {
   off_time_switched = false;
   on_time_switched = false;
   //CLOCK SETUP
-
-
   Wire.begin(PIN_SCL,SDA);
   jahr = 16;
   monat = 11;
@@ -615,8 +608,12 @@ void setup ( void ) {
   stunde = 21;
   minute = 28;
   sekunde = 0;
-  //eingabe();
-
+    
+    #if defined(_DEBUG)
+  eingabe();
+    #endif
+  ausgabe(false);
+    
 setup_wifi();
     
   pinMode ( relay_0, OUTPUT );
@@ -702,9 +699,6 @@ void loop ( void ) {
 
   }
 
-
-
-
       if(wifiMulti.run() != WL_CONNECTED) {
         Serial.println("WiFi not connected!");
         yield();
@@ -756,16 +750,13 @@ void eingabe() {
   Wire.endTransmission();
 }
 
-void ausgabe(boolean zeit) {
+void ausgabe(boolean _zeit) {
   // True=Zeit ausgeben. False = Datum ausgeben
-
   // Initialisieren
   Wire.beginTransmission(DS1307_ADRESSE);
   Wire.write(0x00);
   Wire.endTransmission();
-
   Wire.requestFrom(DS1307_ADRESSE, 7);
-
   sekunde = bcdToDec(Wire.read());
   minute = bcdToDec(Wire.read());
   stunde = bcdToDec(Wire.read() & 0b111111);
@@ -773,11 +764,7 @@ void ausgabe(boolean zeit) {
   tag = bcdToDec(Wire.read());
   monat = bcdToDec(Wire.read());
   jahr = bcdToDec(Wire.read());
-
-
   wochentag = dayofweek1(tag, monat, jahr);
-
-  
 }
 
 
