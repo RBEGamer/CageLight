@@ -1,5 +1,5 @@
 # CageLight
-A smart light control for pet cages with simple and easy to use WebUI.
+A smart light control for pet cages with simple and easy to use WebUI and API.
 
 ## See the images below
 
@@ -24,7 +24,7 @@ A smart light control for pet cages with simple and easy to use WebUI.
 * [ the 3d printed case (located at `documentation/cage_light.skp` - Sketchup) ]
 
 ### OPTIONAL STUFF
-* a dyndns provider if you have not a static ip adress and you want to access the system from outside of you lan
+* a dyndns provider if you have not a static ip adress and you want to access the system from outside of your lan
 
 
 # TOOLS
