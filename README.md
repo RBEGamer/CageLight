@@ -62,3 +62,6 @@ Print the both stl-files. Basic settings are 0.2mm layerheight, no support, no r
 ![Gopher image](/documentation/images/final_build.jpeg)
 ### BASIC WEB UI
 ![Gopher image](/documentation/images/webui.png)
+
+# TODO
+See the TODO List located at `/TODO.MD`
