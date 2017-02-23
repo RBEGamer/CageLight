@@ -381,7 +381,32 @@ String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "</table>";
 
 
+void switch_one_on(int _val = 255){
+digitalWrite(relay_0, 0);
+relay_0_state = 1;
+}
+void switch_two_on(int _val = 255){
+ digitalWrite(relay_1, 0);
+ relay_1_state = 1;
+}
+void switch_one_off(int _val = 255){
+digitalWrite(relay_0, 1);
+relay_0_state = 0;
+}
+void switch_two_off(int _val = 255){
+ digitalWrite(relay_1, 1);
+ relay_1_state = 0;
+}
 
+void switch_all_on(int _val = 255){
+    switch_one_on();
+    switch_two_on();
+}
+
+void switch_all_off(){
+    switch_one_off();
+    switch_two_off();
+}
 
 
 String msg = "";
@@ -402,33 +427,23 @@ volatile bool was_timer_changes = false;
    for ( uint8_t i = 0; i < server.args(); i++ ) {
     message += " " + server.argName ( i ) + ": " + server.arg ( i ) + "\n";
    if(server.argName(i) == "ls" && server.arg(i) == "all_on"){
-   digitalWrite(relay_0, 0);
-   digitalWrite(relay_1,0);
-   relay_0_state = 1;
-   relay_1_state = 1;
+  switch_all_on();
    }
       if(server.argName(i) == "ls" && server.arg(i) == "all_off"){
-   digitalWrite(relay_0, 1);
-   digitalWrite(relay_1,1);
-   relay_0_state = 0;
-   relay_1_state = 0;
+switch_all_off();
    }
       if(server.argName(i) == "ls" && server.arg(i) == "one_on"){
-   digitalWrite(relay_0, 0);
-   relay_0_state = 1;
+switch_one_on();
    }
          if(server.argName(i) == "ls" && server.arg(i) == "one_off"){
-   digitalWrite(relay_0, 1);
-   relay_0_state = 0;
+  switch_one_off();
    }
 
          if(server.argName(i) == "ls" && server.arg(i) == "two_on"){
-   digitalWrite(relay_1, 0);
-   relay_1_state = 1;
+ switch_two_on();
    }
          if(server.argName(i) == "ls" && server.arg(i) == "two_off"){
-   digitalWrite(relay_1, 1);
-   relay_1_state = 0;
+   switch_two_off();
    }
 
 
@@ -556,6 +571,35 @@ void handleNotFound() {
 
 }
 
+
+
+void process_times(){
+  if (on_off_enabled) {
+    Serial.println(stunde == on_off_times[wochentag][0] && !on_time_switched);
+   //ON
+    if (stunde == on_off_times[wochentag][0]  && !on_time_switched) {
+    switch_all_on();
+      on_time_switched = true;
+    }
+    else {
+      if ( on_off_times[wochentag][0] != stunde) {
+        on_time_switched = false;
+      }
+    }
+    //OFF
+    if (stunde == on_off_times[wochentag][1] && !off_time_switched) {
+      switch_all_off();
+      off_time_switched = true;
+    }
+    else {
+      if ( on_off_times[wochentag][1] != stunde) {
+        off_time_switched = false;
+      }
+    }
+
+  }
+}
+
 void setup ( void ) {
   //READ TIMES
   EEPROM.begin(512);
@@ -614,6 +658,9 @@ void setup ( void ) {
     #endif
   ausgabe(false);
     
+    
+  process_times();
+    
 setup_wifi();
     
   pinMode ( relay_0, OUTPUT );
@@ -659,6 +706,8 @@ setup_wifi();
   Serial.println ( "HTTP server started" );
 }
 
+
+
 void loop ( void ) {
 
   
@@ -666,38 +715,9 @@ void loop ( void ) {
 
   
   ausgabe(false);
- 
+ process_times();
 
-  if (on_off_enabled) {
-    Serial.println(stunde == on_off_times[wochentag][0] && !on_time_switched);
-   //ON
-    if (stunde == on_off_times[wochentag][0]  && !on_time_switched) {
-      digitalWrite(relay_0, 0);
-      digitalWrite(relay_1, 0);
-      relay_0_state = 1;
-      relay_1_state = 1;
-      on_time_switched = true;
-    }
-    else {
-      if ( on_off_times[wochentag][0] != stunde) {
-        on_time_switched = false;
-      }
-    }
-    //OFF
-    if (stunde == on_off_times[wochentag][1] && !off_time_switched) {
-      digitalWrite(relay_0, 1);
-      digitalWrite(relay_1, 1);
-      relay_0_state = 0;
-      relay_1_state = 0;
-      off_time_switched = true;
-    }
-    else {
-      if ( on_off_times[wochentag][1] != stunde) {
-        off_time_switched = false;
-      }
-    }
 
-  }
 
       if(wifiMulti.run() != WL_CONNECTED) {
         Serial.println("WiFi not connected!");
