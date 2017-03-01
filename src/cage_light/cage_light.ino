@@ -14,6 +14,10 @@ ESP8266WiFiMulti wifiMulti;
 #define DS1307_ADRESSE 0x68 // i2c adress of the rtc
 const int relay_0 = 14; //pin of channel 1 relay
 const int relay_1 = 12; //pin of channel 2 relay
+
+const int switch_on_pin = 5;
+const int switch_off_pin = 4;
+
 #define WEBSERVER_PORT 80
 #define WEBSITE_TITLE "CAGE LIGHT"
 #define PIN_SCL 4
@@ -659,7 +663,12 @@ void setup ( void ) {
   process_times();
     
 setup_wifi();
-    
+    //SWITCH INPUT PINS
+    pinMode(switch_on_pin, INPUT);
+    pinMode(switch_off_pin, INPUT);
+    digitalWrite(switch_on_pin, HIGH);
+    digitalWrite(switch_off_pin, HIGH);
+    //OUTPUT RELAY PINS
   pinMode ( relay_0, OUTPUT );
   pinMode(relay_1, OUTPUT);
    digitalWrite(relay_0, 0);
@@ -713,7 +722,13 @@ void loop () {
   
   ausgabe(false);
  process_times();
-
+//HANDLE SWITCHES
+    if(digitalRead(switch_off_pin) == LOW){
+        switch_all_off();
+    }
+    if(digitalRead(switch_on_pin) == LOW){
+        switch_all_on();
+    }
 
 
       if(wifiMulti.run() != WL_CONNECTED) {
