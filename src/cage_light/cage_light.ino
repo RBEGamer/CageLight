@@ -556,7 +556,6 @@ switch_one_on();
 }
 
 void handleNotFound() {
-
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -565,10 +564,8 @@ void handleNotFound() {
   message += "\nArguments: ";
   message += server.args();
   message += "\n";
-
-
+    Serial.println(message);
   server.send (404 , "text/html", "<html><head>header('location: /'); </head></html>" );
-
 }
 
 
@@ -665,10 +662,10 @@ setup_wifi();
     
   pinMode ( relay_0, OUTPUT );
   pinMode(relay_1, OUTPUT);
-   digitalWrite(relay_0, 1);
-   digitalWrite(relay_1,1);
-   relay_0_state = 0;
-   relay_1_state = 0;
+   digitalWrite(relay_0, 0);
+   digitalWrite(relay_1,0);
+   relay_0_state = 1;
+   relay_1_state = 1;
   Serial.begin ( SERIAL_BAUD_RATE );
 
  
@@ -708,7 +705,7 @@ setup_wifi();
 
 
 
-void loop ( void ) {
+void loop () {
 
   
 
@@ -723,13 +720,11 @@ void loop ( void ) {
         Serial.println("WiFi not connected!");
         yield();
         delay(1000);
+        //  switch_all_on();
         return;
     }
 
     server.handleClient();
-
-
- 
     delay(50);
 }
 
