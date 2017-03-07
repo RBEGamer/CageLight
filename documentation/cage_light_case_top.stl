@@ -1,4 +1,4 @@
-solid gehäuse meerie light
+solid gehäuse meerie light
 facet normal 0.0 1.0 0.0
   outer loop
     vertex -0.07045787904954891 -35.16047327536448 0.012468373460942296
@@ -629,4 +629,4 @@ facet normal 0.0 -1.0 0.0
     vertex -0.07045787904954891 -101.16047327536448 14.012468373460942
   endloop
 endfacet
-endsolid gehäuse meerie light
+endsolid gehäuse meerie light
