@@ -38,7 +38,7 @@ A smart light control for pet cages with simple and easy to use WebUI and API.
 # BUILD
 
 ## 3D PRINT
-Print the both stl-files. Basic settings are 0.2mm layerheight, < 0.4mm nozzle!, no support, no raft, heatplate is recommented
+Print the both stl-files (`/documentation/cage_light_case_box.stl` and `/documentation/cage_light_case_top.stl`). Good settings are 0.2mm layerheight,  0.4mm nozzle, no support, no raft, heatplate is recommented
 ![Gopher image](/documentation/images/cg_box.png)
 
 ## HARDWARE
