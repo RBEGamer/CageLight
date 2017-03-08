@@ -11,17 +11,18 @@ ESP8266WiFiMulti wifiMulti;
 #include <EEPROM.h>
 
 //CONFIG ----------------------------------------
-#define DS1307_ADRESSE 0x68 // i2c adress of the rtc
-const int relay_0 = 14; //pin of channel 1 relay
-const int relay_1 = 12; //pin of channel 2 relay
+#define AMOUNT_OUTPUTS 2
+const int switch_0_pin = 16;
+const int switch_1_pin = 5;
+const int  i2c_scl_pin = 4;
+const int i2c_sda_pin = 5;
 
-const int switch_on_pin = 5;
-const int switch_off_pin = 4;
+const int output_relais_pins[2] = {14,12};
+int output_relais_states[2] = { 0 };
 
 #define WEBSERVER_PORT 80
+#define DS1307_ADRESSE 0x68 // i2c adress of the rtc
 #define WEBSITE_TITLE "CAGE LIGHT"
-#define PIN_SCL 4
-#define PIN SDA 5
 #define SERIAL_BAUD_RATE 115200
 #define MDNS_NAME "cagelight" //for eg abc.local...
 //EDIT YOUR ACCESS POINTS HERE
@@ -35,23 +36,19 @@ void setup_wifi(){
 //FUNC DEC
 byte decToBcd(byte val);
 byte bcdToDec(byte val);
-void eingabe();
-void ausgabe(boolean zeit);
+void set_time_to_rtc();
+void get_time_from_rtc();
 
 //VARS
 ESP8266WebServer server ( WEBSERVER_PORT );
 //TIME SEKUNDE
 int sekunde, minute, stunde, tag, wochentag, monat, jahr, tag_index;
-
 const String wochentage[7] = { "Sunday", "Monday", "Thuesday", "Wednesday", "Thirstday", "Friday", "Saturday"};
 int on_off_times[7][2] = { {8,22} };
 bool on_off_enabled = true;
-
-
-bool on_time_switched = false;
+bool on_time_switched = false; //FOR SCHEDULE
 bool off_time_switched = false;
-int relay_0_state = 0;
-int relay_1_state = 0;
+
 const String phead_1 = "<!DOCTYPE html><html><head><title>";
 const String phead_2 = "</title>"
   "<meta http-equiv='content-type' content='text/html; charset=utf-8'>"
@@ -151,10 +148,73 @@ const String pend = "</div>"
 "</html>";
 
 
+void switch_channel(int _chid, bool _val){
+  output_relais_states[_chid] = _val;
+   digitalWrite(output_relais_pins[_chid], !_val);
+  }  
+void switch_all_on(){
+   for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+    switch_channel(i, true);
+    }
+}
+void switch_all_off(){
+  for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+    switch_channel(i, false);
+    }
+    
+}
+
+void restore_eeprom_values(){
+  //READ SCHEDULE TIMES
+  int ei = 0;
+  on_off_times[0][0] = EEPROM.read(ei++);
+  on_off_times[0][1] = EEPROM.read(ei++);
+  on_off_times[1][0] = EEPROM.read(ei++);
+  on_off_times[1][1] = EEPROM.read(ei++);
+  on_off_times[2][0] = EEPROM.read(ei++);
+  on_off_times[2][1] = EEPROM.read(ei++);
+  on_off_times[3][0] = EEPROM.read(ei++);
+  on_off_times[3][1] = EEPROM.read(ei++);
+  on_off_times[4][0] = EEPROM.read(ei++);
+  on_off_times[4][1] = EEPROM.read(ei++);
+  on_off_times[5][0] = EEPROM.read(ei++);
+  on_off_times[5][1] = EEPROM.read(ei++);
+  on_off_times[6][0] = EEPROM.read(ei++);
+  on_off_times[6][1] = EEPROM.read(ei++);
+  on_off_enabled = EEPROM.read(ei++);
+
+   for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+   output_relais_states[i] = EEPROM.read(ei++);
+    }
+    
+  }
+void save_values_to_eeprom(){
+   int ei = 0;
+   //TODO DO LOOP HERE
+     EEPROM.write(ei++, (byte)on_off_times[0][0]);
+     EEPROM.write(ei++, (byte)on_off_times[0][1]);
+     EEPROM.write(ei++, (byte)on_off_times[1][0]);
+     EEPROM.write(ei++, (byte)on_off_times[1][1]);
+     EEPROM.write(ei++, (byte)on_off_times[2][0]);
+     EEPROM.write(ei++, (byte)on_off_times[2][1]);
+     EEPROM.write(ei++, (byte)on_off_times[3][0]);
+     EEPROM.write(ei++, (byte)on_off_times[3][1]);
+     EEPROM.write(ei++, (byte)on_off_times[4][0]);
+     EEPROM.write(ei++, (byte)on_off_times[4][1]);
+     EEPROM.write(ei++, (byte)on_off_times[5][0]);
+     EEPROM.write(ei++, (byte)on_off_times[5][1]);
+     EEPROM.write(ei++, (byte)on_off_times[6][0]);
+     EEPROM.write(ei++, (byte)on_off_times[6][1]);
+     EEPROM.write(ei++, on_off_enabled);
+     //SAVE LIGHT STATES
+       for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+    EEPROM.write(ei++,output_relais_states[i]);
+    }
+     EEPROM.commit();
+     Serial.println("eeprom write");
+  }
+
 void handleRoot() {
-
-
-
 
 String time_message = "TIME : ";
 time_message += "<form name = 'btn_time_set' action = '/' method = 'GET'>";
@@ -179,35 +239,24 @@ control_forms += "<form name='btn_off' action='/' method='GET'>"
 "</form>";
 
 
+for(int i = 0; i < AMOUNT_OUTPUTS;i++){
+  control_forms += "<br><h3> CHANNEL " + String(i) + " CONTROL  </h3>";
 
-control_forms += "<br><h3> CHANNEL ONE CONTROL  </h3>";
-//CHANNEL ONE BUTTONS
-if (relay_0_state) {
+if(output_relais_states[i]){
   control_forms += "<form name='btn_ofsf' action='/' method='GET'>"
-    "<input type='hidden' value='one_off' name='ls' />"
-    "<input type='submit' value='OBEN OFF'/>"
+    "<input type='hidden' value='" + String(i) + "_off' name='ls' />"
+    "<input type='submit' value='"+ String(i) + " OFF'/>"
+    "</form>";
+}else{
+   control_forms += "<form name='btn_osaff' action='/' method='GET'>"
+    "<input type='hidden' value='" + String(i) + "_on' name='ls' />"
+    "<input type='submit' value='" + String(i) +" ON'/>"
     "</form>";
 }
-else {
-  control_forms += "<form name='btn_osaff' action='/' method='GET'>"
-    "<input type='hidden' value='one_on' name='ls' />"
-    "<input type='submit' value='OBEN ON'/>"
-    "</form>";
-}
-//CHANNEL TOW BUTTONS
-control_forms += "<br><h3> CHANNEL TWO CONTROL  </h3>";
-if (relay_1_state) {
-  control_forms += "<form name='btn_tfsf' action='/' method='GET'>"
-    "<input type='hidden' value='two_off' name='ls' />"
-    "<input type='submit' value='UNTEN OFF'/>"
-    "</form>";
-}
-else {
-  control_forms += "<form name='btn_tsaff' action='/' method='GET'>"
-    "<input type='hidden' value='two_on' name='ls' />"
-    "<input type='submit' value='UNTEN ON'/>"
-    "</form>";
-}
+  
+  }
+
+
 
 control_forms += "<br><h3> SCHEDULE  </h3>";
 if (on_off_enabled) {
@@ -254,12 +303,12 @@ String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "</tr>"
 "<tr>"
 "<td>ls</td>"
-"<td>one_on</td>"
+"<td>#channelid#_on</td>"
 "<td>Set channel one on</td>"
 "</tr>"
 "<tr>"
 "<td>ls</td>"
-"<td>one_off</td>"
+"<td>#channelid#_off</td>"
 "<td>Set channel one off</td>"
 "</tr>"
 "<tr>"
@@ -385,32 +434,7 @@ String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "</table>";
 
 
-void switch_one_on(int _val = 255){
-digitalWrite(relay_0, 0);
-relay_0_state = 1;
-}
-void switch_two_on(int _val = 255){
- digitalWrite(relay_1, 0);
- relay_1_state = 1;
-}
-void switch_one_off(int _val = 255){
-digitalWrite(relay_0, 1);
-relay_0_state = 0;
-}
-void switch_two_off(int _val = 255){
- digitalWrite(relay_1, 1);
- relay_1_state = 0;
-}
 
-void switch_all_on(int _val = 255){
-    switch_one_on();
-    switch_two_on();
-}
-
-void switch_all_off(){
-    switch_one_off();
-    switch_two_off();
-}
 
 
 String msg = "";
@@ -431,24 +455,32 @@ volatile bool was_timer_changes = false;
    for ( uint8_t i = 0; i < server.args(); i++ ) {
     message += " " + server.argName ( i ) + ": " + server.arg ( i ) + "\n";
    if(server.argName(i) == "ls" && server.arg(i) == "all_on"){
-  switch_all_on();
+switch_all_on();
    }
-      if(server.argName(i) == "ls" && server.arg(i) == "all_off"){
+      else if(server.argName(i) == "ls" && server.arg(i) == "all_off"){
 switch_all_off();
-   }
-      if(server.argName(i) == "ls" && server.arg(i) == "one_on"){
-switch_one_on();
-   }
-         if(server.argName(i) == "ls" && server.arg(i) == "one_off"){
-  switch_one_off();
-   }
+   }else{
+  
 
-         if(server.argName(i) == "ls" && server.arg(i) == "two_on"){
- switch_two_on();
+
+
+for(int i = 0; i < AMOUNT_OUTPUTS;i++){
+
+      if(server.arg(i) == String(i) + "_on"){
+switch_channel(i,true);
+   }else       if(server.arg(i) == String(i) + "_off"){
+switch_channel(i,false);
    }
-         if(server.argName(i) == "ls" && server.arg(i) == "two_off"){
-   switch_two_off();
-   }
+ 
+
+}
+
+  
+  
+  }
+
+
+
 
 
     //SET ITME VARS
@@ -532,27 +564,11 @@ switch_one_on();
 
   }
    if (was_time_changed) {
-     eingabe(); //send time
+     set_time_to_rtc(); //send time
    }
    if (was_timer_changes) {
      //store to eram
-     EEPROM.write(0, (byte)on_off_times[0][0]);
-     EEPROM.write(1, (byte)on_off_times[0][1]);
-     EEPROM.write(2, (byte)on_off_times[1][0]);
-     EEPROM.write(3, (byte)on_off_times[1][1]);
-     EEPROM.write(4, (byte)on_off_times[2][0]);
-     EEPROM.write(5, (byte)on_off_times[2][1]);
-     EEPROM.write(6, (byte)on_off_times[3][0]);
-     EEPROM.write(7, (byte)on_off_times[3][1]);
-     EEPROM.write(8, (byte)on_off_times[4][0]);
-     EEPROM.write(9, (byte)on_off_times[4][1]);
-     EEPROM.write(10, (byte)on_off_times[5][0]);
-     EEPROM.write(11, (byte)on_off_times[5][1]);
-     EEPROM.write(12, (byte)on_off_times[6][0]);
-     EEPROM.write(13, (byte)on_off_times[6][1]);
-     EEPROM.write(14, on_off_enabled);
-     EEPROM.commit();
-     Serial.println("eeprom write");
+    save_values_to_eeprom();
   }
   server.send ( 200, "text/html", msg );
 
@@ -560,6 +576,7 @@ switch_one_on();
 }
 
 void handleNotFound() {
+
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -568,18 +585,18 @@ void handleNotFound() {
   message += "\nArguments: ";
   message += server.args();
   message += "\n";
-    Serial.println(message);
+
+
   server.send (404 , "text/html", "<html><head>header('location: /'); </head></html>" );
+
 }
 
-
-
-void process_times(){
+void process_schedule(){
   if (on_off_enabled) {
     Serial.println(stunde == on_off_times[wochentag][0] && !on_time_switched);
    //ON
     if (stunde == on_off_times[wochentag][0]  && !on_time_switched) {
-    switch_all_on();
+     switch_all_on();
       on_time_switched = true;
     }
     else {
@@ -599,88 +616,61 @@ void process_times(){
     }
 
   }
-}
+  }
 
+
+  
 void setup ( void ) {
+  Serial.begin ( SERIAL_BAUD_RATE );
+
+
+  
+      //SET PINMODE FOR OUTPUTS
+     for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+    pinMode ( output_relais_pins[i], OUTPUT );
+    digitalWrite(output_relais_pins[i],1);
+    output_relais_states[i] = 0;
+    }
+
+    
   //READ TIMES
-  EEPROM.begin(512);
-#if defined(_DEBUG)
-  EEPROM.write(0, 8);
-  EEPROM.write(1, 22);
-  EEPROM.write(2, 8);
-  EEPROM.write(3, 22);
-  EEPROM.write(4, 8);
-  EEPROM.write(5, 22);
-  EEPROM.write(6, 8);
-  EEPROM.write(7, 22);
-  EEPROM.write(8, 8);
-  EEPROM.write(9, 22);
-  EEPROM.write(10, 8);
-  EEPROM.write(11, 22);
-  EEPROM.write(12, 8);
-  EEPROM.write(13, 22);
-  EEPROM.write(14, 1);
-  EEPROM.commit();
-#endif //  DEBUG
+  EEPROM.begin( 16 +(7*2) + AMOUNT_OUTPUTS);
+  
+restore_eeprom_values();
+ for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+  switch_channel(i,output_relais_states[i]);
+  }
 
-
-
-//READ SCHEDULE TIMES
-  on_off_times[0][0] = EEPROM.read(0);
-  on_off_times[0][1] = EEPROM.read(1);
-  on_off_times[1][0] = EEPROM.read(2);
-  on_off_times[1][1] = EEPROM.read(3);
-  on_off_times[2][0] = EEPROM.read(4);
-  on_off_times[2][1] = EEPROM.read(5);
-  on_off_times[3][0] = EEPROM.read(6);
-  on_off_times[3][1] = EEPROM.read(7);
-  on_off_times[4][0] = EEPROM.read(8);
-  on_off_times[4][1] = EEPROM.read(9);
-  on_off_times[5][0] = EEPROM.read(10);
-  on_off_times[5][1] = EEPROM.read(11);
-  on_off_times[6][0] = EEPROM.read(12);
-  on_off_times[6][1] = EEPROM.read(13);
-  on_off_enabled = EEPROM.read(14);
 
   off_time_switched = false;
   on_time_switched = false;
   //CLOCK SETUP
-  Wire.begin(PIN_SCL,SDA);
-  jahr = 16;
+  Wire.begin(i2c_scl_pin,i2c_sda_pin);
+  jahr = 17;
   monat = 11;
   tag = 28;
-
   stunde = 21;
   minute = 28;
   sekunde = 0;
     
     #if defined(_DEBUG)
-  eingabe();
+  set_time_to_rtc();
     #endif
-  ausgabe(false);
     
-    
-  process_times();
+  get_time_from_rtc();
+  process_schedule();
     
 setup_wifi();
-    //SWITCH INPUT PINS
-    pinMode(switch_on_pin, INPUT);
-    pinMode(switch_off_pin, INPUT);
-    digitalWrite(switch_on_pin, HIGH);
-    digitalWrite(switch_off_pin, HIGH);
-    //OUTPUT RELAY PINS
-  pinMode ( relay_0, OUTPUT );
-  pinMode(relay_1, OUTPUT);
-   digitalWrite(relay_0, 0);
-   digitalWrite(relay_1,0);
-   relay_0_state = 1;
-   relay_1_state = 1;
-  Serial.begin ( SERIAL_BAUD_RATE );
 
- 
 
-//  WiFi.begin ( ssid, password );
-  Serial.println ( "" );
+    
+   
+  //SWITCH IO CONF
+pinMode(switch_0_pin, INPUT);
+digitalWrite(switch_0_pin, HIGH);
+pinMode(switch_1_pin, INPUT);
+digitalWrite(switch_1_pin, HIGH);
+
 
   // Wait for connection
   while ( wifiMulti.run() != WL_CONNECTED ) {
@@ -688,9 +678,7 @@ setup_wifi();
     Serial.print ( "." );
   }
     
-  Serial.println ( "" );
-  //Serial.print ( "Connected to " );
-  //Serial.println ( ssid );
+
   Serial.print ( "IP address: " );
   Serial.println ( WiFi.localIP() );
 
@@ -703,10 +691,6 @@ setup_wifi();
 
   server.on ( "/", handleRoot );
   server.on ( "/index.html", handleRoot );
-  //server.on ( "/test.svg", drawGraph );
-  server.on ( "/inline", []() {
-    server.send ( 200, "text/plain", "this works as well" );
-  } );
   server.onNotFound ( handleNotFound );
   server.begin();
   Serial.println ( "HTTP server started" );
@@ -714,39 +698,39 @@ setup_wifi();
 
 
 
-void loop () {
+  
+void loop ( void ) {
 
   
 
-
-  
-  ausgabe(false);
- process_times();
-//HANDLE SWITCHES
-    if(digitalRead(switch_off_pin) == LOW){
-        switch_all_off();
-    }
-    if(digitalRead(switch_on_pin) == LOW){
-        switch_all_on();
-    }
-
-
+ get_time_from_rtc();
+  process_schedule();
+ 
+//GET SWITCH READINGS
+if(digitalRead(switch_0_pin) == LOW && digitalRead(switch_1_pin) == HIGH){
+  switch_all_on();
+}else if(digitalRead(switch_1_pin) == LOW && digitalRead(switch_0_pin) == HIGH){
+  switch_all_off();
+}else if(digitalRead(switch_1_pin) == HIGH && digitalRead(switch_0_pin) == HIGH){
+}else{
+  }
+ 
+      //HANDLE WIFI CONNECTION LOST
       if(wifiMulti.run() != WL_CONNECTED) {
-        Serial.println("WiFi not connected!");
+        Serial.println(".");
         yield();
-        delay(1000);
-        //  switch_all_on();
+        delay(500);
         return;
     }
-
+//HANDLE WEBSERVER
     server.handleClient();
-    delay(50);
+
+    delay(30);
 }
 
 
-
-int dayofweek1(int day, int month, int year)
-{
+// Hilfsfunktionen
+int dayofweek1(int day, int month, int year){
   /** Variation of Sillke for the Gregorian calendar. **/
   /** With 0=Sunday, 1=Monday, ... 6=Saturday         **/
   if ((month -= 2) <= 0) {
@@ -755,18 +739,14 @@ int dayofweek1(int day, int month, int year)
   }
   return (83 * month / 32 + day + year + year / 4 - year / 100 + year / 400) % 7;
 }
-
-// Hilfsfunktionen
 byte decToBcd(byte val) {
   return ((val / 10 * 16) + (val % 10));
 }
 byte bcdToDec(byte val) {
   return ((val / 16 * 10) + (val % 16));
 }
-
-void eingabe() {
+void set_time_to_rtc() {
   // Setzt die aktuelle Zeit
-
   Wire.beginTransmission(DS1307_ADRESSE);
   Wire.write(0x00);
   Wire.write(decToBcd(sekunde));
@@ -779,8 +759,7 @@ void eingabe() {
   Wire.write(0x00);
   Wire.endTransmission();
 }
-
-void ausgabe(boolean _zeit) {
+void get_time_from_rtc() {
   // True=Zeit ausgeben. False = Datum ausgeben
   // Initialisieren
   Wire.beginTransmission(DS1307_ADRESSE);
@@ -796,5 +775,4 @@ void ausgabe(boolean _zeit) {
   jahr = bcdToDec(Wire.read());
   wochentag = dayofweek1(tag, monat, jahr);
 }
-
 
