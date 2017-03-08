@@ -34,7 +34,7 @@ void setup_wifi(){
     /* SSID NO !"§...  like FRITZ!BOX -> FRITZBOX*/
     wifiMulti.addAP("test_wifi", "213546");
     wifiMulti.addAP("FRITZ!Box Fon WLAN 7390", "6226054527192856");
-    wifiMulti.addAP("iPhone von Marcel Ochsendorf", "00000000");
+
   }
 
 
