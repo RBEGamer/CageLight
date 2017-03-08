@@ -25,13 +25,16 @@ A smart light control for pet cages with simple and easy to use WebUI and API.
 * [OPTIONAL] 2 push buttons for on off switching
 * [OPTIONAL] 2 pullup resistors for the 2 buttons
 * [IF REQUIRED] CR2032 Battery for the RTC Module
+
 ### OPTIONAL STUFF
 * a dyndns provider if you have not a static ip adress and you want to access the system from outside of your lan
+* see TODO.md
 
 # TOOLS
 * soldering stuff
 * hot glue
 * wires, ....
+* micro usb cable
 * a 3D Printer for the case (optional)
 
 
