@@ -23,7 +23,7 @@ const int i2c_sda_pin = 5;
 
 const int output_relais_pins[2] = {14,12};
 int output_relais_states[2] = { 0 };
-
+const bool intert_outputs = true;
 #define WEBSERVER_PORT 80
 #define DS1307_ADRESSE 0x68 // i2c adress of the rtc
 #define WEBSITE_TITLE "CAGE LIGHT"
@@ -176,7 +176,12 @@ const String pend = "</div>"
 
 void switch_channel(int _chid, bool _val){
   output_relais_states[_chid] = _val;
-   digitalWrite(output_relais_pins[_chid], !_val);
+    if(intert_outputs){ 
+        digitalWrite(output_relais_pins[_chid], !_val);
+    }else{ 
+        digitalWrite(output_relais_pins[_chid], _val);
+    }
+  
     save_values_to_eeprom();
   }  
 void switch_all_on(){
@@ -663,8 +668,7 @@ if(RB_DNS_UUID == "00000000-0000-0000-0000-000000000000"){
       //SET PINMODE FOR OUTPUTS
      for(int i = 0; i < AMOUNT_OUTPUTS; i++){
     pinMode ( output_relais_pins[i], OUTPUT );
-    digitalWrite(output_relais_pins[i],1);
-    output_relais_states[i] = 0;
+    switch_channel(i, 1);
     }
 
     
