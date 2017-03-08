@@ -1,8 +1,12 @@
 
+#define CAGE_LIGHT_VERSION "23a"
+
+
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WiFiMulti.h>
 ESP8266WiFiMulti wifiMulti;
@@ -31,7 +35,28 @@ void setup_wifi(){
     wifiMulti.addAP("test_wifi", "213546");
     //wifiMulti.addAP("test_wifi_1", "213456");
   }
+
+
+
+/* DNS SERVER HOSTES BY ME  
+ *  
+ *  
+ * 
+ */  
+#define RB_DNS //USE THE RB DNS SERVICE
+const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/index.php";
+//PLEASE USE
+#if defined(_RB_DNS_DEBUG)
+const String RB_DNS_UUID = "b10c5911-e3f1-4743-bce5-98994d256e76";
+#else
+const String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; //CAHNGE THIS <-------------
+#endif
+#define RB_DNS_PASSWORD "1234" //change this <-------------------
 // END CONFIG ---------------------------------
+bool rb_dns_conf_correct = true;
+
+
+
 
 //FUNC DEC
 byte decToBcd(byte val);
@@ -574,7 +599,6 @@ switch_channel(i,false);
 
 
 }
-
 void handleNotFound() {
 
   String message = "File Not Found\n\n";
@@ -590,7 +614,6 @@ void handleNotFound() {
   server.send (404 , "text/html", "<html><head>header('location: /'); </head></html>" );
 
 }
-
 void process_schedule(){
   if (on_off_enabled) {
     Serial.println(stunde == on_off_times[wochentag][0] && !on_time_switched);
@@ -618,11 +641,29 @@ void process_schedule(){
   }
   }
 
-
+void make_http_requiest_to_dns_server(){
+#if defined(RB_DNS)
+if(!rb_dns_conf_correct){return;}
+   HTTPClient http;  //Declare an object of class HTTPClient
+   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&version=" + CAGE_LIGHT_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1");  //Specify request destination
+  int httpCode = http.GET();  
+   if (httpCode > 0) { 
+      String payload = http.getString();   
+      Serial.println("RBDNS RESPONSE : " + payload);                     
+    }
+    http.end();   //Close connection
+#endif
+  }
   
 void setup ( void ) {
   Serial.begin ( SERIAL_BAUD_RATE );
 
+#if defined(RB_DNS)
+if(RB_DNS_UUID == "00000000-0000-0000-0000-000000000000"){
+  Serial.println("please generate a other uuid at https://www.uuidgenerator.net/version4");
+  rb_dns_conf_correct = false;
+  }
+#endif
 
   
       //SET PINMODE FOR OUTPUTS
@@ -688,6 +729,9 @@ digitalWrite(switch_1_pin, HIGH);
   if ( MDNS.begin ( MDNS_NAME ) ) {
     Serial.println ( "MDNS responder started" );
   }
+
+
+make_http_requiest_to_dns_server();
 
   server.on ( "/", handleRoot );
   server.on ( "/index.html", handleRoot );
