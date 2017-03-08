@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "23a"
+#define CAGE_LIGHT_VERSION "24a"
 #define _RB_DNS_DEBUG
 
 
@@ -250,7 +250,7 @@ void handleRoot() {
 
 String time_message = "TIME : ";
 time_message += "<form name = 'btn_time_set' action = '/' method = 'GET'>";
-time_message += "Current Time : <input type='number' name='date_d' min='0' max='31' value='" + String(tag) + "'/>.<input type='number' name='date_m' min='0' max='12' value='" + String(monat) + "'/>.<input type='number' name='date_y' min='0' max='99' value='" + String(jahr) + "'/> (" + wochentage[wochentag] +") <br /> <input type='number' name='time_h' min='0' max='23' value='" + String(stunde) + "'/>:<input type='number' name='time_m' min='0' max='59' value='" + String(minute) + "'/>:<input type='number' name='time_s' min='0' max='59' value='" + String(sekunde) + "'/><br /><input type='submit' value='SAVE TIME'/>";
+time_message += "Current Time : <input type='number' name='date_d' min='0' max='31' value='" + String(tag) + "'/>.<input type='number' name='date_m' min='0' max='12' value='" + String(monat) + "'/>.<input type='number' name='date_y' min='0' max='99' value='" + String(jahr) + "'/> (" + wochentage[wochentag] +") <input type='number' name='time_h' min='0' max='23' value='" + String(stunde) + "'/>:<input type='number' name='time_m' min='0' max='59' value='" + String(minute) + "'/>:<input type='number' name='time_s' min='0' max='59' value='" + String(sekunde) + "'/><br /><input type='submit' value='SAVE TIME'/>";
 time_message += "</form>";
 
 
