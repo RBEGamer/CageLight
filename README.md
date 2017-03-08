@@ -26,17 +26,12 @@ A smart light control for pet cages with simple and easy to use WebUI and API.
 * [OPTIONAL] 2 pullup resistors for the 2 buttons
 * [IF REQUIRED] CR2032 Battery for the RTC Module
 
-### OPTIONAL STUFF
-* a dyndns provider if you have not a static ip adress and you want to access the system from outside of your lan
-* see TODO.md
-
 # TOOLS
 * soldering stuff
 * hot glue
 * wires, ....
 * micro usb cable
 * a 3D Printer for the case (optional)
-
 
 # BUILD
 
@@ -55,6 +50,17 @@ Print the both stl-files (`/documentation/cage_light_case_box.stl` and `/documen
 
 
 # SOFTWARE SETUP
+
+
+### OPTIONAL STUFF
+# DYNDNS PROVIDER
+* a dyndns provider if you have not a static ip adress and you want to access the system from outside of your lan
+
+# RB DNS SERVICE BY ME 
+
+
+
+
 #### Please note the software is not really clean at this time because it was a one day project and WIP!
 * add the esp8266 board url to the additional board in your arduino ide :  http://arduino.esp8266.com/stable/package_esp8266com_index.json
 * download the sketch located at `src/cage_light/`
