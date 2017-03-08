@@ -52,12 +52,21 @@ Print the both stl-files (`/documentation/cage_light_case_box.stl` and `/documen
 # SOFTWARE SETUP
 
 
-### OPTIONAL STUFF
+### DYNDNS STUFF
+* Please add a port forwarding for port 80 in you router
+
+* WIP
+
 # DYNDNS PROVIDER
 * a dyndns provider if you have not a static ip adress and you want to access the system from outside of your lan
 
-# RB DNS SERVICE BY ME 
+* WIP
 
+# RB DNS SERVICE BY ME 
+* i have several of this units at different locations so i have create a own simple dyndns service for this.
+it called RB DNS and the cage light firmware after version 23 support it
+
+* WIP
 
 
 
@@ -69,10 +78,19 @@ Print the both stl-files (`/documentation/cage_light_case_box.stl` and `/documen
 * show at startup over the serial port the given IP of the board (or check your router)
 
 # IMAGES
-### FINAL UNIT WITH NO CASE
-![Gopher image](/documentation/images/final_build.jpeg)
+### FINAL UNIT WITH OPEN CASE
+![Gopher image](/documentation/images/final_build.jpg)
+
+### RELAIS outputs
+![Gopher image](/documentation/images/relais_outputs.jpg)
+
+### USB AND POWER IN
+![Gopher image](/documentation/images/side_usb_power_buttons.jpg)
+
 ### BASIC WEB UI
 ![Gopher image](/documentation/images/webui.png)
+
+
 
 # TODO
 See the TODO List located at `/TODO.MD`
