@@ -1,6 +1,6 @@
 
 #define CAGE_LIGHT_VERSION "23a"
-
+#define _RB_DNS_DEBUG
 
 
 #include <ESP8266WiFi.h>
@@ -16,7 +16,7 @@ ESP8266WiFiMulti wifiMulti;
 
 //CONFIG ----------------------------------------
 #define AMOUNT_OUTPUTS 2
-const int switch_0_pin = 16;
+const int switch_0_pin = 4;
 const int switch_1_pin = 5;
 const int  i2c_scl_pin = 4;
 const int i2c_sda_pin = 5;
@@ -33,7 +33,8 @@ int output_relais_states[2] = { 0 };
 void setup_wifi(){
     /* SSID NO !"§...  like FRITZ!BOX -> FRITZBOX*/
     wifiMulti.addAP("test_wifi", "213546");
-    //wifiMulti.addAP("test_wifi_1", "213456");
+    wifiMulti.addAP("FRITZ!Box Fon WLAN 7390", "6226054527192856");
+    wifiMulti.addAP("iPhone von Marcel Ochsendorf", "00000000");
   }
 
 
@@ -44,10 +45,10 @@ void setup_wifi(){
  * 
  */  
 #define RB_DNS //USE THE RB DNS SERVICE
-const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/index.php";
+const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rbdns.php";
 //PLEASE USE
 #if defined(_RB_DNS_DEBUG)
-const String RB_DNS_UUID = "b10c5911-e3f1-4743-bce5-98994d256e76";
+const String RB_DNS_UUID = "b10c5911-1234-1234-1234-98994d256e76";
 #else
 const String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; //CAHNGE THIS <-------------
 #endif
@@ -337,16 +338,6 @@ String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "<td>Set channel one off</td>"
 "</tr>"
 "<tr>"
-"<td>ls</td>"
-"<td>two_on</td>"
-"<td>Set channel two on</td>"
-"</tr>"
-"<tr>"
-"<td>ls</td>"
-"<td>two_off</td>"
-"<td>Set channel two off</td>"
-"</tr>"
-"<tr>"
 "<td>time_s</td>"
 "<td>&lt; seconds&gt; </td>"
 "<td>Set the seconds of the clock</td>"
@@ -489,20 +480,22 @@ switch_all_off();
 
 
 
-for(int i = 0; i < AMOUNT_OUTPUTS;i++){
-
-      if(server.arg(i) == String(i) + "_on"){
-switch_channel(i,true);
-   }else       if(server.arg(i) == String(i) + "_off"){
-switch_channel(i,false);
+for(int ic = 0; ic < AMOUNT_OUTPUTS;ic++){
+      if(server.arg(i) == String(ic) + "_on"){
+switch_channel(ic,true);
    }
- 
+}
+for(int ic = 0; ic < AMOUNT_OUTPUTS;ic++){
+   if(server.arg(i) == String(ic) + "_off"){
+switch_channel(ic,false);
+   }
+}
 
 }
 
   
   
-  }
+  
 
 
 
@@ -790,6 +783,7 @@ byte bcdToDec(byte val) {
   return ((val / 16 * 10) + (val % 16));
 }
 void set_time_to_rtc() {
+  Serial.println("SAVE TIME TO RTC");
   // Setzt die aktuelle Zeit
   Wire.beginTransmission(DS1307_ADRESSE);
   Wire.write(0x00);
@@ -804,6 +798,7 @@ void set_time_to_rtc() {
   Wire.endTransmission();
 }
 void get_time_from_rtc() {
+  Serial.println("READ TIME FROM RTC");
   // True=Zeit ausgeben. False = Datum ausgeben
   // Initialisieren
   Wire.beginTransmission(DS1307_ADRESSE);
