@@ -177,6 +177,7 @@ const String pend = "</div>"
 void switch_channel(int _chid, bool _val){
   output_relais_states[_chid] = _val;
    digitalWrite(output_relais_pins[_chid], !_val);
+    save_values_to_eeprom();
   }  
 void switch_all_on(){
    for(int i = 0; i < AMOUNT_OUTPUTS; i++){
