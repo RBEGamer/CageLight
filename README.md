@@ -7,13 +7,14 @@ A smart light control for pet cages with simple and easy to use WebUI and API.
 
 
 # FEATURES
-* (currently) 2 channels
+* conifgurable output channels
 * Low cost ESP8266 powered
 * WebUI
 * RTC for automatic mode
 * easy to use http-get api
 
 # PARTS
+Partlist for a two channel configuration
 * ESP8266 module (I used the NodeMCU V1.1 board)
 * 2 channel relais card
 * DS1307 RTC module
@@ -66,7 +67,7 @@ Please feel free to modify the Sketchup File to you needs. The basic case is a b
 # RB DNS SERVICE BY ME 
 * i have several of this units at different locations so i have create a own simple dyndns service for this.
 it called RB DNS and the cage light firmware after version 24b support it
-
+https://github.com/RBEGamer/RB_DNS_SERVICE
 * WIP
 
 
