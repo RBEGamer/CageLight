@@ -1,6 +1,9 @@
 
 #define CAGE_LIGHT_VERSION "25a"
-#define _RB_DNS_DEBUG
+#define RB_DNS //USE THE RB DNS SERVICE
+#define _RB_DNS_DEBUG //DEBUG SETTINGS FOR THE RB_DNS_SERVICE
+#define USE_BUTTONS
+#define AMOUNT_OUTPUTS 2 //SET YOUR OUTPUT COUNT HERE HERE
 
 
 #include <ESP8266WiFi.h>
@@ -15,9 +18,10 @@ ESP8266WiFiMulti wifiMulti;
 #include <EEPROM.h>
 
 //CONFIG ----------------------------------------
-#define AMOUNT_OUTPUTS 2
-const int switch_0_pin = 13;
-const int switch_1_pin = 15;
+#if defined(USE_BUTTONS)
+const int switch_0_pin = 9;
+const int switch_1_pin = 10;
+#endif
 const int  i2c_scl_pin = 4;
 const int i2c_sda_pin = 5;
 
@@ -40,11 +44,8 @@ void setup_wifi(){
 
 
 /* DNS SERVER HOSTES BY ME  
- *  
- *  
- * 
  */  
-#define RB_DNS //USE THE RB DNS SERVICE
+
 const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php";
 //PLEASE USE
 #if defined(_RB_DNS_DEBUG)
@@ -712,11 +713,12 @@ setup_wifi();
     
    
   //SWITCH IO CONF
+#if defined(USE_BUTTONS)
 pinMode(switch_0_pin, INPUT);
-digitalWrite(switch_0_pin, HIGH);
-pinMode(switch_1_pin, INPUT);
+digitalWrite(switch_0_pin, HIGH);//set PULLUP
+pinMode(switch_1_pin, INPUT); 
 digitalWrite(switch_1_pin, HIGH);
-
+#endif
 
   // Wait for connection
   while ( wifiMulti.run() != WL_CONNECTED ) {
@@ -755,6 +757,7 @@ void loop ( void ) {
  get_time_from_rtc();
  process_schedule();
  
+#if defined(USE_BUTTONS)
 //GET SWITCH READINGS
 if(digitalRead(switch_0_pin) == LOW && digitalRead(switch_1_pin) == LOW){
 delay(50);
@@ -766,6 +769,7 @@ delay(50);
     delay(50);
 }else{
   }
+#endif
  
       //HANDLE WIFI CONNECTION LOST
       if(wifiMulti.run() != WL_CONNECTED) {
