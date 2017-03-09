@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "24a"
+#define CAGE_LIGHT_VERSION "24b"
 #define _RB_DNS_DEBUG
 
 
@@ -45,7 +45,7 @@ void setup_wifi(){
  * 
  */  
 #define RB_DNS //USE THE RB DNS SERVICE
-const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rbdns.php";
+const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php";
 //PLEASE USE
 #if defined(_RB_DNS_DEBUG)
 const String RB_DNS_UUID = "b10c5911-1234-1234-1234-98994d256e76";
