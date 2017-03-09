@@ -762,10 +762,10 @@ void loop ( void ) {
 if(digitalRead(switch_0_pin) == LOW && digitalRead(switch_1_pin) == LOW){
 delay(50);
 }else if(digitalRead(switch_1_pin) == LOW && digitalRead(switch_0_pin) == HIGH){
- // switch_all_off();
+ switch_all_off();
     delay(50);
 }else if(digitalRead(switch_1_pin) == HIGH && digitalRead(switch_0_pin) == LOW){
-   //  switch_all_on();
+     switch_all_on();
     delay(50);
 }else{
   }
