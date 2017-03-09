@@ -1,3 +1,8 @@
 # todo list
-* send request to dyn server
-* login via a javascript and device id
+
+* add ntp server request for auto update if time and date are the same values
+* store uuid in eeprom if a nil id request a new one https://www.uuidgenerator.net/api/version4
+
+
+
+
