@@ -65,7 +65,7 @@ Please feel free to modify the Sketchup File to you needs. The basic case is a b
 
 # RB DNS SERVICE BY ME 
 * i have several of this units at different locations so i have create a own simple dyndns service for this.
-it called RB DNS and the cage light firmware after version 23 support it
+it called RB DNS and the cage light firmware after version 24b support it
 
 * WIP
 
@@ -83,6 +83,7 @@ it called RB DNS and the cage light firmware after version 23 support it
 ![Gopher image](/documentation/images/final_build.jpg)
 
 ### RELAIS outputs
+The middle of the luster terminal was disconnected from the relais and connected to `GND` so no additional `GND`-Terminal needed
 ![Gopher image](/documentation/images/relais_outputs.jpg)
 
 ### USB AND POWER IN
