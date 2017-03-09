@@ -752,12 +752,12 @@ void loop ( void ) {
  
 //GET SWITCH READINGS
 if(digitalRead(switch_0_pin) == LOW && digitalRead(switch_1_pin) == HIGH){
-  switch_all_on();
-    delay(50);
+delay(50);
 }else if(digitalRead(switch_1_pin) == LOW && digitalRead(switch_0_pin) == HIGH){
   switch_all_off();
     delay(50)
-}else if(digitalRead(switch_1_pin) == HIGH && digitalRead(switch_0_pin) == HIGH){
+}else if(digitalRead(switch_1_pin) == HIGH && digitalRead(switch_0_pin) == LOW){
+     switch_all_on();
     delay(50);
 }else{
   }
