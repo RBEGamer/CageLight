@@ -316,9 +316,9 @@ else {
     "<input type='submit' value='ENABLE SCHEDULE'/>"
     "</form>";
 }
-
-
-
+#if defined(RB_DNS)
+control_forms += "<br><h4> RBDNS ACTIVATED See <a href='https://github.com/RBEGamer/CageLight/'>https://github.com/RBEGamer/CageLight/</a> for information</h4>"
+#endif
 String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "<tr>"
 "<th>PARAMETER</th>"
