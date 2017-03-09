@@ -74,6 +74,7 @@ https://github.com/RBEGamer/RB_DNS_SERVICE
 
 #### Please note the software is not really clean at this time because it was a one day project and WIP!
 * add the esp8266 board url to the additional board in your arduino ide :  http://arduino.esp8266.com/stable/package_esp8266com_index.json
+* if you are using a display please download the library : https://github.com/fdebrabander/Arduino-LiquidCrystal-I2C-library 
 * download the sketch located at `src/cage_light/`
 * [ edit the pin config to your connected pins (first lines) ]
 * upload the sketch to the ESP8266 board
