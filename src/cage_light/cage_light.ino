@@ -24,7 +24,7 @@ const int i2c_sda_pin = 5;
 const int output_relais_pins[2] = {14,12};
 int output_relais_states[2] = { 0 };
 const bool intert_outputs = true;
-#define WEBSERVER_PORT 80
+#define WEBSERVER_PORT 80 //acess
 #define DS1307_ADRESSE 0x68 // i2c adress of the rtc
 #define WEBSITE_TITLE "CAGE LIGHT"
 #define SERIAL_BAUD_RATE 115200
@@ -53,6 +53,8 @@ const String RB_DNS_UUID = "b10c5911-1234-1234-1234-98994d256e76";
 const String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; //CAHNGE THIS <-------------
 #endif
 #define RB_DNS_PASSWORD "1234" //change this <-------------------
+#define RB_DNS_ACCESS_PORT WEBSERVER_PORT
+#define RB_DNS_DEVICE_NAME "CAGE_LIGHT_GITHUB" //<----- change this to your individual username
 // END CONFIG ---------------------------------
 bool rb_dns_conf_correct = true;
 
@@ -644,7 +646,7 @@ void make_http_requiest_to_dns_server(){
 #if defined(RB_DNS)
 if(!rb_dns_conf_correct){return;}
    HTTPClient http;  //Declare an object of class HTTPClient
-   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&version=" + CAGE_LIGHT_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1");  //Specify request destination
+   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&version=" + CAGE_LIGHT_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME);  //Specify request destination
   int httpCode = http.GET();  
    if (httpCode > 0) { 
       String payload = http.getString();   
