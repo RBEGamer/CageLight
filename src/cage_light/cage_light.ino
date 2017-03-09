@@ -19,8 +19,8 @@ ESP8266WiFiMulti wifiMulti;
 
 //CONFIG ----------------------------------------
 #if defined(USE_BUTTONS)
-const int switch_0_pin = 9;
-const int switch_1_pin = 10;
+const int switch_0_pin = 12;
+const int switch_1_pin = 15;
 #endif
 const int  i2c_scl_pin = 4;
 const int i2c_sda_pin = 5;
