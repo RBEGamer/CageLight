@@ -16,8 +16,8 @@ ESP8266WiFiMulti wifiMulti;
 
 //CONFIG ----------------------------------------
 #define AMOUNT_OUTPUTS 2
-const int switch_0_pin = 4;
-const int switch_1_pin = 5;
+const int switch_0_pin = 13;
+const int switch_1_pin = 15;
 const int  i2c_scl_pin = 4;
 const int i2c_sda_pin = 5;
 
