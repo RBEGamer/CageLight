@@ -1,10 +1,11 @@
 
-#define CAGE_LIGHT_VERSION "27a"
+#define CAGE_LIGHT_VERSION "25a" //removed i2 support
 #define RB_DNS //USE THE RB DNS SERVICE
 #define _RB_DNS_DEBUG //DEBUG SETTINGS FOR THE RB_DNS_SERVICE
-#define USE_BUTTONS
+//#define USE_BUTTONS
+
 #define AMOUNT_OUTPUTS 2 //SET YOUR OUTPUT COUNT HERE HERE
-#define USE_I2C_DISPLAY
+
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
@@ -19,9 +20,12 @@ ESP8266WiFiMulti wifiMulti;
 
 //CONFIG ----------------------------------------
 #if defined(USE_BUTTONS)
+//#define INVERT_BUTTONS_STATE
 const int switch_0_pin = 12;
 const int switch_1_pin = 15;
 #endif
+
+//I2C PINS
 const int  i2c_scl_pin = 4;
 const int i2c_sda_pin = 5;
 
@@ -32,7 +36,7 @@ const bool intert_outputs = true;
 #define DS1307_ADRESSE 0x68 // i2c adress of the rtc
 #define WEBSITE_TITLE "CAGE LIGHT"
 #define SERIAL_BAUD_RATE 115200
-#define MDNS_NAME "cagelight" //for cagelight.local...
+#define MDNS_NAME "cagelight" //for eg abc.local...
 //EDIT YOUR ACCESS POINTS HERE
 void setup_wifi(){
     /* SSID NO !"§...  like FRITZ!BOX -> FRITZBOX*/
@@ -42,23 +46,14 @@ void setup_wifi(){
   }
 
 
-#if defined(USE_I2C_DISPLAY)
-#include <LiquidCrystal_I2C.h>
-#include <elapsedMillis.h>
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-const unsigned int disp_led_delay = 10000;
-bool bgs;
-elapsedMillis timeElapsed;
-#endif
-
 
 /* DNS SERVER HOSTES BY ME  
  */  
-#if defined(RB_DNS)
+
 const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php";
 //PLEASE USE
 #if defined(_RB_DNS_DEBUG)
-const String RB_DNS_UUID = "00000000-1234-1234-1234-000000000000"; //DEMO DEVICE ID
+const String RB_DNS_UUID = "b10c5911-1234-1234-1234-98994d256e76";
 #else
 const String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; //CAHNGE THIS <-------------
 #endif
@@ -67,7 +62,7 @@ const String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; //CAHNGE THIS
 #define RB_DNS_DEVICE_NAME "CAGE_LIGHT_GITHUB" //<----- change this to your individual username
 // END CONFIG ---------------------------------
 bool rb_dns_conf_correct = true;
-#endif
+
 
 
 
@@ -237,18 +232,6 @@ void save_values_to_eeprom(){
   }
 
 
-void show_message_lcd(String _msg, char _row = 0, char _coll = 0){
-  #if defined(USE_I2C_DISPLAY)
-  lcd.clear();
-   lcd.setCursor(_coll,_row);
-   lcd.print(_msg);
-         //enable backlight
-          lcd.backlight();
-        bgs = true;
-         timeElapsed = 0; 
-         #endif
-  }
-
 void switch_channel(int _chid, bool _val){
   output_relais_states[_chid] = _val;
     if(intert_outputs){ 
@@ -256,8 +239,7 @@ void switch_channel(int _chid, bool _val){
     }else{ 
         digitalWrite(output_relais_pins[_chid], _val);
     }
-  //show channels on display
-  show_message_lcd(String(_val),1,_chid);
+  
     save_values_to_eeprom();
   }  
 void switch_all_on(){
@@ -530,6 +512,12 @@ switch_channel(ic,false);
 }
 
   
+  
+  
+
+
+
+
 
     //SET ITME VARS
      if (server.argName(i) == "time_s") {
@@ -726,40 +714,29 @@ restore_eeprom_values();
 setup_wifi();
 
 
-#if defined(USE_I2C_DISPLAY)
-lcd.begin(); 
-lcd.backlight();
-lcd.setCursor(0,0); //Start at character 4 on line 0
-lcd.print("CAGE LIGHT");
-lcd.setCursor(0,1); //Start at character 4 on line 0
-lcd.print(CAGE_LIGHT_VERSION);
-delay(1000);
-lcd.noBacklight();
-lcd.clear();
-bgs = false;
-#endif
-
     
    
   //SWITCH IO CONF
 #if defined(USE_BUTTONS)
 pinMode(switch_0_pin, INPUT);
+#if defined(INVERT_BUTTONS_STATE)
 digitalWrite(switch_0_pin, HIGH);//set PULLUP
-pinMode(switch_1_pin, INPUT); 
 digitalWrite(switch_1_pin, HIGH);
+#endif
+pinMode(switch_1_pin, INPUT); 
+
 #endif
 
   // Wait for connection
   while ( wifiMulti.run() != WL_CONNECTED ) {
     delay ( 500 );
-    show_message_lcd("WIFI CONNECTING");
     Serial.print ( "." );
   }
     
 
   Serial.print ( "IP address: " );
   Serial.println ( WiFi.localIP() );
-show_message_lcd(String(WiFi.localIP()));
+
 
 
   
@@ -778,10 +755,18 @@ make_http_requiest_to_dns_server();
 }
 
 
-void handle_buttons(){
+
   
-  #if defined(USE_BUTTONS)
+void loop ( void ) {
+
+  
+
+ get_time_from_rtc();
+ process_schedule();
+ 
+#if defined(USE_BUTTONS)
 //GET SWITCH READINGS
+    #if defined(INVERT_BUTTONS_STATE)
 if(digitalRead(switch_0_pin) == LOW && digitalRead(switch_1_pin) == LOW){
 delay(50);
 }else if(digitalRead(switch_1_pin) == LOW && digitalRead(switch_0_pin) == HIGH){
@@ -792,28 +777,18 @@ delay(50);
     delay(50);
 }else{
   }
-  }
-
-
-void handle_lcd_backlight(){
-    #if defined(USE_I2C_DISPLAY)
-if (timeElapsed > disp_led_delay && bgs == true) 
-  {       
-    timeElapsed = 0; 
-    bgs = false;
-    lcd.noBacklight();
-  }
+    #else
+if(digitalRead(switch_0_pin) == HIGH && digitalRead(switch_1_pin) == HIGH){
+delay(50);
+}else if(digitalRead(switch_1_pin) == HIGH && digitalRead(switch_0_pin) == LOW){
+ switch_all_off();
+    delay(50);
+}else if(digitalRead(switch_1_pin) == LOW && digitalRead(switch_0_pin) == HIGH){
+     switch_all_on();
+    delay(50);
+}else{
+  }    
 #endif
-    }
-  
-void loop ( void ) {
-
-  
-
- get_time_from_rtc();
- process_schedule();
- handle_lcd_backlight();
- handle_buttons();
 #endif
  
       //HANDLE WIFI CONNECTION LOST
@@ -878,4 +853,3 @@ void get_time_from_rtc() {
   jahr = bcdToDec(Wire.read());
   wochentag = dayofweek1(tag, monat, jahr);
 }
-
