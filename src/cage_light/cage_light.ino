@@ -176,28 +176,6 @@ const String pend = "</div>"
 "</html>";
 
 
-void switch_channel(int _chid, bool _val){
-  output_relais_states[_chid] = _val;
-    if(intert_outputs){ 
-        digitalWrite(output_relais_pins[_chid], !_val);
-    }else{ 
-        digitalWrite(output_relais_pins[_chid], _val);
-    }
-  
-    save_values_to_eeprom();
-  }  
-void switch_all_on(){
-   for(int i = 0; i < AMOUNT_OUTPUTS; i++){
-    switch_channel(i, true);
-    }
-}
-void switch_all_off(){
-  for(int i = 0; i < AMOUNT_OUTPUTS; i++){
-    switch_channel(i, false);
-    }
-    
-}
-
 void restore_eeprom_values(){
   //READ SCHEDULE TIMES
   int ei = 0;
@@ -247,6 +225,29 @@ void save_values_to_eeprom(){
      EEPROM.commit();
      Serial.println("eeprom write");
   }
+
+
+void switch_channel(int _chid, bool _val){
+  output_relais_states[_chid] = _val;
+    if(intert_outputs){ 
+        digitalWrite(output_relais_pins[_chid], !_val);
+    }else{ 
+        digitalWrite(output_relais_pins[_chid], _val);
+    }
+  
+    save_values_to_eeprom();
+  }  
+void switch_all_on(){
+   for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+    switch_channel(i, true);
+    }
+}
+void switch_all_off(){
+  for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+    switch_channel(i, false);
+    }
+    
+}
 
 void handleRoot() {
 
@@ -317,7 +318,7 @@ else {
     "</form>";
 }
 #if defined(RB_DNS)
-control_forms += "<br><h4> RBDNS ACTIVATED See <a href='https://github.com/RBEGamer/CageLight/'>https://github.com/RBEGamer/CageLight/</a> for information</h4>"
+control_forms += "<br><h4> RBDNS ACTIVATED See <a href='https://github.com/RBEGamer/CageLight/'>https://github.com/RBEGamer/CageLight/</a> for information</h4>";
 #endif
 String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "<tr>"
@@ -755,7 +756,7 @@ if(digitalRead(switch_0_pin) == LOW && digitalRead(switch_1_pin) == HIGH){
 delay(50);
 }else if(digitalRead(switch_1_pin) == LOW && digitalRead(switch_0_pin) == HIGH){
   switch_all_off();
-    delay(50)
+    delay(50);
 }else if(digitalRead(switch_1_pin) == HIGH && digitalRead(switch_0_pin) == LOW){
      switch_all_on();
     delay(50);
