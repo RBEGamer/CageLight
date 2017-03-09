@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "24b"
+#define CAGE_LIGHT_VERSION "25a"
 #define _RB_DNS_DEBUG
 
 
@@ -488,18 +488,22 @@ switch_all_off();
   
 
 
+if(server.argName(i) == "ls"){
 
 for(int ic = 0; ic < AMOUNT_OUTPUTS;ic++){
       if(server.arg(i) == String(ic) + "_on"){
 switch_channel(ic,true);
+
+
    }
 }
+
 for(int ic = 0; ic < AMOUNT_OUTPUTS;ic++){
    if(server.arg(i) == String(ic) + "_off"){
 switch_channel(ic,false);
    }
 }
-
+}
 }
 
   
@@ -676,7 +680,7 @@ if(RB_DNS_UUID == "00000000-0000-0000-0000-000000000000"){
 
     
   //READ TIMES
-  EEPROM.begin( 16 +(7*2) + AMOUNT_OUTPUTS);
+  EEPROM.begin( 64 + AMOUNT_OUTPUTS);
   
 restore_eeprom_values();
  for(int i = 0; i < AMOUNT_OUTPUTS; i++){
@@ -749,16 +753,16 @@ void loop ( void ) {
   
 
  get_time_from_rtc();
-  process_schedule();
+ process_schedule();
  
 //GET SWITCH READINGS
-if(digitalRead(switch_0_pin) == LOW && digitalRead(switch_1_pin) == HIGH){
+if(digitalRead(switch_0_pin) == LOW && digitalRead(switch_1_pin) == LOW){
 delay(50);
 }else if(digitalRead(switch_1_pin) == LOW && digitalRead(switch_0_pin) == HIGH){
-  switch_all_off();
+ // switch_all_off();
     delay(50);
 }else if(digitalRead(switch_1_pin) == HIGH && digitalRead(switch_0_pin) == LOW){
-     switch_all_on();
+   //  switch_all_on();
     delay(50);
 }else{
   }
