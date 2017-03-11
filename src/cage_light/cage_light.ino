@@ -1,10 +1,9 @@
 
-#define CAGE_LIGHT_VERSION "25a" //removed i2 support
-#define RB_DNS //USE THE RB DNS SERVICE
-#define _RB_DNS_DEBUG //DEBUG SETTINGS FOR THE RB_DNS_SERVICE
-//#define USE_BUTTONS
+#define CAGE_LIGHT_VERSION "28a" //removed i2 support
 
-#define AMOUNT_OUTPUTS 2 //SET YOUR OUTPUT COUNT HERE HERE
+
+
+
 
 
 #include <ESP8266WiFi.h>
@@ -19,51 +18,65 @@ ESP8266WiFiMulti wifiMulti;
 #include <EEPROM.h>
 
 //CONFIG ----------------------------------------
+
+//if you are connected buttons for on/off set the bins here
+//#define USE_BUTTONS //ENABLE BUTTONS HERE
 #if defined(USE_BUTTONS)
 //#define INVERT_BUTTONS_STATE
 const int switch_0_pin = 12;
 const int switch_1_pin = 15;
 #endif
 
-//I2C PINS
-const int  i2c_scl_pin = 4;
-const int i2c_sda_pin = 5;
-
+//OUTPUT SETTINGS
+#define AMOUNT_OUTPUTS 2 //SET YOUR OUTPUT COUNT HERE HERE
 const int output_relais_pins[2] = {14,12};
-int output_relais_states[2] = { 0 };
 const bool intert_outputs = true;
-#define WEBSERVER_PORT 80 //acess
-#define DS1307_ADRESSE 0x68 // i2c adress of the rtc
-#define WEBSITE_TITLE "CAGE LIGHT"
-#define SERIAL_BAUD_RATE 115200
-#define MDNS_NAME "cagelight" //for eg abc.local...
-//EDIT YOUR ACCESS POINTS HERE
-void setup_wifi(){
-    /* SSID NO !"§...  like FRITZ!BOX -> FRITZBOX*/
-    wifiMulti.addAP("test_wifi", "213546");
-    wifiMulti.addAP("FRITZ!Box Fon WLAN 7390", "6226054527192856");
 
-  }
+
+//ADD HERE YOUR WIFI SSIDs AND PWs
+#define WIFI_AP_COUNT 3
+const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527192856"},{"Keunecke","9121996wyrich"},{"Keunecke_Extender","9121996wyrich"}};
+
+
+//WEB UI SETTINGS
+#define WEBSERVER_PORT 80 //set the port for the webserver eg 80 8080
+#define MDNS_NAME "cagelight" // set hostname for http://cagelight.local<port>
+#define WEBSITE_TITLE "CAGE_LIGHT_GITHUB" //name your device
+
+
+
 
 
 
 /* DNS SERVER HOSTES BY ME  
- */  
+please see the read.md on https://github.com/RBEGamer/CageLight/ for config and send data information
+*/
+//#define RB_DNS //USE THE RB DNS SERVICE
+//#define _RB_DNS_DEBUG //DEBUG SETTINGS FOR THE RB_DNS_SERVICE
 
-const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php";
-//PLEASE USE
+#if defined(RB_DNS)
 #if defined(_RB_DNS_DEBUG)
-const String RB_DNS_UUID = "b10c5911-1234-1234-1234-98994d256e76";
+const String RB_DNS_UUID = "00000000-1234-1234-1234-000000000000";
 #else
 const String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; //CAHNGE THIS <-------------
 #endif
-#define RB_DNS_PASSWORD "1234" //change this <-------------------
+#define RB_DNS_PASSWORD "62260545" //change this <-------------------
 #define RB_DNS_ACCESS_PORT WEBSERVER_PORT
-#define RB_DNS_DEVICE_NAME "CAGE_LIGHT_GITHUB" //<----- change this to your individual username
-// END CONFIG ---------------------------------
+#define RB_DNS_DEVICE_NAME WEBSITE_TITLE //you can set here a username for login
+const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php";
 bool rb_dns_conf_correct = true;
+#endif
 
 
+
+//OTHER CONFIG USUALLY NOT NEEDED
+//I2C PINS
+const int  i2c_scl_pin = 4;
+const int i2c_sda_pin = 5;
+int output_relais_states[2] = { 0 };
+#define DS1307_ADRESSE 0x68 // i2c adress of the rtc
+#define SERIAL_BAUD_RATE 115200
+// END CONFIG ---------------------------------
 
 
 //FUNC DEC
@@ -76,7 +89,11 @@ void get_time_from_rtc();
 ESP8266WebServer server ( WEBSERVER_PORT );
 //TIME SEKUNDE
 int sekunde, minute, stunde, tag, wochentag, monat, jahr, tag_index;
+#if defined(WEEKDAYS_GERMAN)
+const String wochentage[7] = { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"};
+#else
 const String wochentage[7] = { "Sunday", "Monday", "Thuesday", "Wednesday", "Thirstday", "Friday", "Saturday"};
+#endif
 int on_off_times[7][2] = { {8,22} };
 bool on_off_enabled = true;
 bool on_time_switched = false; //FOR SCHEDULE
@@ -91,7 +108,7 @@ const String phead_2 = "</title>"
   "<script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js'></script>"
   "<style> body {  } #red, #green, #blue { margin: 10px; } #red { background: #f00; } #green { background: #0f0; } #blue { background: #00f; } </style>"
   "<script>"
-  "function changeRGB(event, ui) { jQuery.ajaxSetup({timeout: 110}); /*not to DDoS the Arduino, you might have to change this to some threshold value that fits your setup*/ var id = $(this).attr('id'); if (id == 'red') $.post('/rgb', { red: ui.value } ); if (id == 'green') $.post('/rgb', { green: ui.value } ); if (id == 'blue') $.post('/rgb', { blue: ui.value } ); } "
+  "function changeRGB(event, ui) { jQuery.ajaxSetup({timeout: 110}); var id = $(this).attr('id'); if (id == 'red') $.post('/rgb', { red: ui.value } ); if (id == 'green') $.post('/rgb', { green: ui.value } ); if (id == 'blue') $.post('/rgb', { blue: ui.value } ); } "
   "$(document).ready(function(){ $('#red, #green, #blue').slider({min: 0, max:255, change:changeRGB, slide:changeRGB}); });"
   "</script>"
   "<style>"
@@ -179,6 +196,13 @@ const String pend = "</div>"
 "</div>"
 "</body>"
 "</html>";
+
+
+void setup_wifi(){
+    for(int i = 0; i < WIFI_AP_COUNT; i++){
+      wifiMulti.addAP(wifi_aps[i][0], wifi_aps[i][1]);
+  }
+}
 
 
 void restore_eeprom_values(){
