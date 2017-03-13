@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "28a" //removed i2 support
+#define CAGE_LIGHT_VERSION "29a" //removed i2 support
 
 
 
