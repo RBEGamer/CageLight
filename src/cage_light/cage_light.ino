@@ -51,7 +51,7 @@ const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527
 /* DNS SERVER HOSTES BY ME  
 please see the read.md on https://github.com/RBEGamer/CageLight/ for config and send data information
 */
-//#define RB_DNS //USE THE RB DNS SERVICE
+#define RB_DNS //USE THE RB DNS SERVICE
 //#define _RB_DNS_DEBUG //DEBUG SETTINGS FOR THE RB_DNS_SERVICE
 
 #if defined(RB_DNS)
@@ -63,7 +63,7 @@ const String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; //CAHNGE THIS
 #define RB_DNS_PASSWORD "62260545" //change this <-------------------
 #define RB_DNS_ACCESS_PORT WEBSERVER_PORT
 #define RB_DNS_DEVICE_NAME WEBSITE_TITLE //you can set here a username for login
-const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php";
+const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php"; // CHANGE THIS<-------------------------------
 bool rb_dns_conf_correct = true;
 #endif
 
