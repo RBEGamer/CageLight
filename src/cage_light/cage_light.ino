@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "29a" //removed i2 support
+#define CAGE_LIGHT_VERSION "31a" //removed i2 support
 
 
 
@@ -51,20 +51,25 @@ const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527
 /* DNS SERVER HOSTES BY ME  
 please see the read.md on https://github.com/RBEGamer/CageLight/ for config and send data information
 */
-//#define RB_DNS //USE THE RB DNS SERVICE
+#define RB_DNS //USE THE RB DNS SERVICE
 //#define _RB_DNS_DEBUG //DEBUG SETTINGS FOR THE RB_DNS_SERVICE
 
 #if defined(RB_DNS)
 #if defined(_RB_DNS_DEBUG)
-const String RB_DNS_UUID = "00000000-1234-1234-1234-000000000000";
+String RB_DNS_UUID = "00000000-1234-1234-1234-000000000000";
 #else
-const String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; //CAHNGE THIS <-------------
+String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; 
 #endif
-#define RB_DNS_PASSWORD "62260545" //change this <-------------------
+const String RB_DNS_PASSWORD = "62260545"; //change this <-------------------
 #define RB_DNS_ACCESS_PORT WEBSERVER_PORT
 #define RB_DNS_DEVICE_NAME WEBSITE_TITLE //you can set here a username for login
 const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php"; // CHANGE THIS<-------------------------------
+const String RB_DNS_UUID_URL = "http://109.230.230.209:80/rb_dns_server/gen_uuid.php";
 bool rb_dns_conf_correct = true;
+int rb_dns_uuid_len = 36; 
+const int rb_dns_uuid_max_len = 36; //change thisto 48 TODO
+unsigned long previousMillis_rbdns = 0; 
+const long interval_rbdns = 1000 * 60 * 5; //5min
 #endif
 
 
@@ -228,6 +233,28 @@ void restore_eeprom_values(){
    output_relais_states[i] = EEPROM.read(ei++);
     }
     
+
+    //READ UUID FROM EEPROM
+#if defined(RB_DNS)
+ rb_dns_uuid_len = EEPROM.read(ei++);
+    #if defined(_RB_DNS_DEBUG)
+    ei += rb_dns_uuid_max_len;
+    RB_DNS_UUID = "00000000-1234-1234-1234-000000000000";
+    #else
+    RB_DNS_UUID = "00000000-0000-0000-0000-000000000000";
+       for(int i = 0; i < rb_dns_uuid_max_len; i++){//rb_dns_uuid_len
+        if(i < rb_dns_uuid_len){
+   RB_DNS_UUID += String((char)EEPROM.read(ei++));
+        }else{
+          ei++;
+          }
+   
+    }
+   Serial.println("READ EEPROM UUID : " + RB_DNS_UUID);
+    #endif
+#else
+ei += rb_dns_uuid_max_len;
+#endif
   }
 void save_values_to_eeprom(){
    int ei = 0;
@@ -251,6 +278,27 @@ void save_values_to_eeprom(){
        for(int i = 0; i < AMOUNT_OUTPUTS; i++){
     EEPROM.write(ei++,output_relais_states[i]);
     }
+    
+
+#if defined(RB_DNS)
+ rb_dns_uuid_len = RB_DNS_UUID.length();
+EEPROM.write(ei++, rb_dns_uuid_len);
+    #if defined(_RB_DNS_DEBUG)
+   
+    ei += rb_dns_uuid_max_len;
+    #else
+       for(int i = 0; i < rb_dns_uuid_max_len; i++){
+        if(i < rb_dns_uuid_len){
+   EEPROM.write(ei++, (byte)RB_DNS_UUID[i]);
+        }else{
+           EEPROM.write(ei++, 0);
+          }
+    }
+    #endif
+#else
+ei += rb_dns_uuid_max_len;
+#endif
+    
      EEPROM.commit();
      Serial.println("eeprom write");
   }
@@ -348,6 +396,8 @@ else {
 }
 #if defined(RB_DNS)
 control_forms += "<br><h4> RBDNS ACTIVATED See <a href='https://github.com/RBEGamer/CageLight/'>https://github.com/RBEGamer/CageLight/</a> for information</h4>";
+control_forms += "<br> <h3> UUID : " + String(RB_DNS_UUID) + "</h3><br>";
+control_forms += "<br><h3> PASSWORD : " + String(RB_DNS_PASSWORD) +"</h3><br>";
 #endif
 String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "<tr>"
@@ -676,6 +726,24 @@ void process_schedule(){
   }
   }
 
+void request_uuid(){
+  HTTPClient http;  //Declare an object of class HTTPClient
+http.begin(RB_DNS_UUID_URL + "?type=cagelight&version=" + CAGE_LIGHT_VERSION);
+  int httpCode = http.GET();
+  if (httpCode > 0) { 
+      String payload = http.getString();
+      if(payload == "uuid_error"){
+      }else{
+      RB_DNS_UUID == payload;
+       rb_dns_uuid_len = RB_DNS_UUID.length();
+      rb_dns_conf_correct = true;
+      Serial.println("UUID SET : " + payload);
+      save_values_to_eeprom();
+      delay(5000);
+      }
+  }
+  }
+
 void make_http_requiest_to_dns_server(){
 #if defined(RB_DNS)
 if(!rb_dns_conf_correct){return;}
@@ -683,7 +751,27 @@ if(!rb_dns_conf_correct){return;}
    http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&version=" + CAGE_LIGHT_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME);  //Specify request destination
   int httpCode = http.GET();  
    if (httpCode > 0) { 
-      String payload = http.getString();   
+      String payload = http.getString();  
+      if(payload == "insert_ok"){
+        Serial.println("RB DNS SETUP CORRECTLY");
+       }else if(payload == "update_ok"){
+        Serial.println("RB DNS UPDATE OK");
+       }else if(payload == "missing_params"){
+        Serial.println("RB DNS MISSING PARAMS");
+        rb_dns_conf_correct = false;
+       }else if(payload == "password_wrong"){
+        Serial.println("RB DNS PASSWORD WRONG");
+        rb_dns_conf_correct = false;
+       }else if(payload == "change_uuid"){
+        Serial.println("RB DNS CHANGE UUID");
+        rb_dns_conf_correct = false;
+        request_uuid();
+       }else{
+        Serial.println("RB DNS UNKNOWN ERROR");
+        rb_dns_conf_correct = false;
+       }
+
+       
       Serial.println("RBDNS RESPONSE : " + payload);                     
     }
     http.end();   //Close connection
@@ -709,7 +797,7 @@ if(RB_DNS_UUID == "00000000-0000-0000-0000-000000000000"){
 
     
   //READ TIMES
-  EEPROM.begin( 64 + AMOUNT_OUTPUTS);
+  EEPROM.begin(64 + AMOUNT_OUTPUTS + rb_dns_uuid_max_len + (7*2));
   
 restore_eeprom_values();
  for(int i = 0; i < AMOUNT_OUTPUTS; i++){
@@ -824,6 +912,19 @@ delay(50);
     }
 //HANDLE WEBSERVER
     server.handleClient();
+
+
+//SEND RBDNS REQUEST
+#if defined(RB_DNS)
+unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis_rbdns >= interval_rbdns) {
+    previousMillis_rbdns = currentMillis;
+    make_http_requiest_to_dns_server();
+  }
+#endif
+
+
+
 
     delay(30);
 }
