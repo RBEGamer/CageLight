@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "31a" //removed i2 support
+#define CAGE_LIGHT_VERSION "32a" //removed i2 support
 
 
 
@@ -30,12 +30,12 @@ const int switch_1_pin = 15;
 //OUTPUT SETTINGS
 #define AMOUNT_OUTPUTS 2 //SET YOUR OUTPUT COUNT HERE HERE
 const int output_relais_pins[2] = {14,12};
-const bool intert_outputs = true;
+bool intert_outputs = false;
 
 
 //ADD HERE YOUR WIFI SSIDs AND PWs
-#define WIFI_AP_COUNT 3
-const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527192856"},{"Keunecke","9121996wyrich"},{"Keunecke_Extender","9121996wyrich"}};
+#define WIFI_AP_COUNT 2
+const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527192856"},{"Keunecke","9121996wyrich"}};//,{"Keunecke_Extender","9121996wyrich"}
 
 
 //WEB UI SETTINGS
@@ -63,8 +63,10 @@ String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000";
 const String RB_DNS_PASSWORD = "62260545"; //change this <-------------------
 #define RB_DNS_ACCESS_PORT WEBSERVER_PORT
 #define RB_DNS_DEVICE_NAME WEBSITE_TITLE //you can set here a username for login
-const String RB_DNS_HOST_BASE_URL = "http://109.230.230.209:80/rb_dns_server/update.php"; // CHANGE THIS<-------------------------------
-const String RB_DNS_UUID_URL = "http://109.230.230.209:80/rb_dns_server/gen_uuid.php";
+const String RB_DNS_HOST = "http://109.230.230.209:80/";
+const String RB_DNS_HOST_BASE_URL = RB_DNS_HOST +"rb_dns_server/update.php"; // CHANGE THIS<-------------------------------
+const String RB_DNS_UUID_URL = RB_DNS_HOST +"rb_dns_server/gen_uuid.php";
+const String RB_DNS_LOGINMASK_URL = RB_DNS_HOST +"rb_dns_server/index.php";
 bool rb_dns_conf_correct = true;
 int rb_dns_uuid_len = 36; 
 const int rb_dns_uuid_max_len = 36; //change thisto 48 TODO
@@ -237,11 +239,12 @@ void restore_eeprom_values(){
     //READ UUID FROM EEPROM
 #if defined(RB_DNS)
  rb_dns_uuid_len = EEPROM.read(ei++);
+ Serial.println("UUID LEN : " + String(rb_dns_uuid_len));
     #if defined(_RB_DNS_DEBUG)
     ei += rb_dns_uuid_max_len;
     RB_DNS_UUID = "00000000-1234-1234-1234-000000000000";
     #else
-    RB_DNS_UUID = "00000000-0000-0000-0000-000000000000";
+    RB_DNS_UUID = "";
        for(int i = 0; i < rb_dns_uuid_max_len; i++){//rb_dns_uuid_len
         if(i < rb_dns_uuid_len){
    RB_DNS_UUID += String((char)EEPROM.read(ei++));
@@ -255,6 +258,14 @@ void restore_eeprom_values(){
 #else
 ei += rb_dns_uuid_max_len;
 #endif
+
+
+
+if(EEPROM.read(ei++) > 0){
+ intert_outputs = true;
+  }else{
+    intert_outputs = false;
+    }
   }
 void save_values_to_eeprom(){
    int ei = 0;
@@ -283,36 +294,47 @@ void save_values_to_eeprom(){
 #if defined(RB_DNS)
  rb_dns_uuid_len = RB_DNS_UUID.length();
 EEPROM.write(ei++, rb_dns_uuid_len);
+Serial.println(RB_DNS_UUID);
     #if defined(_RB_DNS_DEBUG)
    
     ei += rb_dns_uuid_max_len;
     #else
        for(int i = 0; i < rb_dns_uuid_max_len; i++){
         if(i < rb_dns_uuid_len){
-   EEPROM.write(ei++, (byte)RB_DNS_UUID[i]);
+   EEPROM.write(ei++, RB_DNS_UUID[i]);
+   Serial.println(String(ei) + " : " + (char)RB_DNS_UUID[i]);
         }else{
-           EEPROM.write(ei++, 0);
+           EEPROM.write(ei++, '*');
           }
     }
     #endif
 #else
 ei += rb_dns_uuid_max_len;
 #endif
+
+
+if(intert_outputs){
+    EEPROM.write(ei++, 1);
+}else{
+    EEPROM.write(ei++, 0);
+}
+
     
      EEPROM.commit();
      Serial.println("eeprom write");
   }
 
 
-void switch_channel(int _chid, bool _val){
+void switch_channel(int _chid, bool _val, bool _wreep = true){
   output_relais_states[_chid] = _val;
     if(intert_outputs){ 
         digitalWrite(output_relais_pins[_chid], !_val);
     }else{ 
         digitalWrite(output_relais_pins[_chid], _val);
     }
-  
+  if(_wreep){
     save_values_to_eeprom();
+  }
   }  
 void switch_all_on(){
    for(int i = 0; i < AMOUNT_OUTPUTS; i++){
@@ -394,10 +416,17 @@ else {
     "<input type='submit' value='ENABLE SCHEDULE'/>"
     "</form>";
 }
+
+
+
+
+
 #if defined(RB_DNS)
-control_forms += "<br><h4> RBDNS ACTIVATED See <a href='https://github.com/RBEGamer/CageLight/'>https://github.com/RBEGamer/CageLight/</a> for information</h4>";
-control_forms += "<br> <h3> UUID : " + String(RB_DNS_UUID) + "</h3><br>";
-control_forms += "<br><h3> PASSWORD : " + String(RB_DNS_PASSWORD) +"</h3><br>";
+control_forms += "<br><h4> RBDNS ACTIVATED See <a href='https://github.com/RBEGamer/RB_DNS_SERVICE'>github.com/RBEGamer/RB_DNS_SERVICE</a> for information</h4>";
+
+control_forms += "<h3>PLEASE LOGIN AT :<a href='" +RB_DNS_LOGINMASK_URL + "?uuid="+ RB_DNS_UUID + "&pass=" + RB_DNS_PASSWORD +"&mode=direct'>" + RB_DNS_LOGINMASK_URL + "</a><br>";
+control_forms += "<br>  UUID : " + String(RB_DNS_UUID) + "<br>";
+control_forms += "<br> PASSWORD : " + String(RB_DNS_PASSWORD) +"<br>";
 #endif
 String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "<tr>"
@@ -535,6 +564,11 @@ String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
 "<td> </td>"
 "<td>Disable the timer<br></td>"
 "</tr>"
+"<tr>"
+"<td>invert_outputs</td>"
+"<td>0 = false 1 = true</td>"
+"<td>Invert the output states<br></td>"
+"</tr>"
 "</table>";
 
 
@@ -619,6 +653,19 @@ switch_channel(ic,false);
        was_time_changed = true;
      }
      
+     if (server.argName(i) == "invert_outputs") {
+       if(server.arg(i).toInt() > 0){
+       intert_outputs = true;
+       }else{
+        intert_outputs = false;
+        }
+         for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+        switch_channel(i,output_relais_states[i], false);
+        }
+        was_timer_changes = true;
+     }
+
+     
      if (server.argName(i) == "set_sched_sun_on") {
        on_off_times[0][0] = server.arg(i).toInt(); was_timer_changes = true;
      }
@@ -670,6 +717,8 @@ switch_channel(ic,false);
        on_off_enabled = false;
        was_time_changed = true;
      }
+
+
 
 
   }
@@ -727,17 +776,19 @@ void process_schedule(){
   }
 
 void request_uuid(){
+  Serial.println("req uuid");
   HTTPClient http;  //Declare an object of class HTTPClient
 http.begin(RB_DNS_UUID_URL + "?type=cagelight&version=" + CAGE_LIGHT_VERSION);
   int httpCode = http.GET();
   if (httpCode > 0) { 
       String payload = http.getString();
       if(payload == "uuid_error"){
+        Serial.println("uuid get error");
       }else{
-      RB_DNS_UUID == payload;
+      RB_DNS_UUID = payload;
        rb_dns_uuid_len = RB_DNS_UUID.length();
       rb_dns_conf_correct = true;
-      Serial.println("UUID SET : " + payload);
+      Serial.println("UUID SET : " + RB_DNS_UUID);
       save_values_to_eeprom();
       delay(5000);
       }
@@ -781,18 +832,13 @@ if(!rb_dns_conf_correct){return;}
 void setup ( void ) {
   Serial.begin ( SERIAL_BAUD_RATE );
 
-#if defined(RB_DNS)
-if(RB_DNS_UUID == "00000000-0000-0000-0000-000000000000"){
-  Serial.println("please generate a other uuid at https://www.uuidgenerator.net/version4");
-  rb_dns_conf_correct = false;
-  }
-#endif
+
 
   
       //SET PINMODE FOR OUTPUTS
      for(int i = 0; i < AMOUNT_OUTPUTS; i++){
     pinMode ( output_relais_pins[i], OUTPUT );
-    switch_channel(i, 1);
+//    switch_channel(i, 1);
     }
 
     
@@ -801,8 +847,10 @@ if(RB_DNS_UUID == "00000000-0000-0000-0000-000000000000"){
   
 restore_eeprom_values();
  for(int i = 0; i < AMOUNT_OUTPUTS; i++){
-  switch_channel(i,output_relais_states[i]);
+  switch_channel(i,output_relais_states[i], false);
   }
+
+
 
 
   off_time_switched = false;
@@ -842,6 +890,7 @@ pinMode(switch_1_pin, INPUT);
   // Wait for connection
   while ( wifiMulti.run() != WL_CONNECTED ) {
     delay ( 500 );
+
     Serial.print ( "." );
   }
     
@@ -856,9 +905,17 @@ pinMode(switch_1_pin, INPUT);
     Serial.println ( "MDNS responder started" );
   }
 
+#if defined(RB_DNS) //make a restore eeprom first !
+if(RB_DNS_UUID == "00000000-0000-0000-0000-000000000000"){
+  Serial.println("please generate a other uuid at https://www.uuidgenerator.net/version4");
+ request_uuid();
+  }
+#endif
+
 
 make_http_requiest_to_dns_server();
 
+delay(5000);
   server.on ( "/", handleRoot );
   server.on ( "/index.html", handleRoot );
   server.onNotFound ( handleNotFound );
@@ -947,7 +1004,7 @@ byte bcdToDec(byte val) {
   return ((val / 16 * 10) + (val % 16));
 }
 void set_time_to_rtc() {
-  Serial.println("SAVE TIME TO RTC");
+  Serial.println("SET TIME TO RTC");
   // Setzt die aktuelle Zeit
   Wire.beginTransmission(DS1307_ADRESSE);
   Wire.write(0x00);
@@ -962,7 +1019,6 @@ void set_time_to_rtc() {
   Wire.endTransmission();
 }
 void get_time_from_rtc() {
-  Serial.println("READ TIME FROM RTC");
   // True=Zeit ausgeben. False = Datum ausgeben
   // Initialisieren
   Wire.beginTransmission(DS1307_ADRESSE);
