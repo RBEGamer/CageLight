@@ -51,7 +51,7 @@ const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527
 /* DNS SERVER HOSTES BY ME  
 please see the read.md on https://github.com/RBEGamer/CageLight/ for config and send data information
 */
-#define RB_DNS //USE THE RB DNS SERVICE
+//#define RB_DNS //USE THE RB DNS SERVICE
 //#define _RB_DNS_DEBUG //DEBUG SETTINGS FOR THE RB_DNS_SERVICE
 
 #if defined(RB_DNS)
