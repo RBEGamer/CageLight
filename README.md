@@ -57,7 +57,7 @@ Please feel free to modify the Sketchup File to you needs. The basic case is a b
 ### DYNDNS STUFF
 * Please add a port forwarding for port 80 in you router
 
-* WIP
+
 
 # DYNDNS PROVIDER
 * a dyndns provider if you have not a static ip adress and you want to access the system from outside of your lan
@@ -68,6 +68,7 @@ Please feel free to modify the Sketchup File to you needs. The basic case is a b
 * i have several of this units at different locations so i have create a own simple dyndns service for this.
 it called RB DNS and the cage light firmware after version 24b support it
 https://github.com/RBEGamer/RB_DNS_SERVICE
+please change the ip in the configuration to your own rb_dns_server configuration
 * WIP
 
 
