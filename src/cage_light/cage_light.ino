@@ -1,6 +1,6 @@
 
-#define CAGE_LIGHT_VERSION "32a" //removed i2 support
-
+#define CAGE_LIGHT_VERSION "33a" //removed i2 support
+#define RB_DNS_VERSION "9"
 
 
 
@@ -35,7 +35,7 @@ bool intert_outputs = false;
 
 //ADD HERE YOUR WIFI SSIDs AND PWs
 #define WIFI_AP_COUNT 2
-const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527192856"},{"Keunecke","9121996wyrich"}};//,{"Keunecke_Extender","9121996wyrich"}
+const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527192856"},{"Keunecke","9121996wyrich"}};
 
 
 //WEB UI SETTINGS
@@ -799,7 +799,12 @@ void make_http_requiest_to_dns_server(){
 #if defined(RB_DNS)
 if(!rb_dns_conf_correct){return;}
    HTTPClient http;  //Declare an object of class HTTPClient
-   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&version=" + CAGE_LIGHT_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME);  //Specify request destination
+   #if defined(_RB_DNS_DEBUG)
+   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&debug=1&version=" + RB_DNS_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME);  //Specify request destination
+
+   #else
+   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&version=" + RB_DNS_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME);  //Specify request destination
+  #endif
   int httpCode = http.GET();  
    if (httpCode > 0) { 
       String payload = http.getString();  
