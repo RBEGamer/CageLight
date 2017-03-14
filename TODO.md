@@ -1,7 +1,7 @@
 # todo list
 
 * add ntp server request for auto update if time and date are the same values
-* store uuid in eeprom if a nil id request a new one see here on github a php impl
+* check if valid values in eeprom else create demo set
 
 
 
