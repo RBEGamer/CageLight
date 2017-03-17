@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "33a" //removed i2 support
+#define CAGE_LIGHT_VERSION "34a" //removed i2 support
 #define RB_DNS_VERSION "9"
 
 
@@ -800,10 +800,10 @@ void make_http_requiest_to_dns_server(){
 if(!rb_dns_conf_correct){return;}
    HTTPClient http;  //Declare an object of class HTTPClient
    #if defined(_RB_DNS_DEBUG)
-   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&debug=1&version=" + RB_DNS_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME);  //Specify request destination
+   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&debug=1&version=" + RB_DNS_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME + "&localip=" + String(WiFi.localIP()));  //Specify request destination
 
    #else
-   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&version=" + RB_DNS_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME);  //Specify request destination
+   http.begin(RB_DNS_HOST_BASE_URL + "?uuid=" + RB_DNS_UUID + "&type=cagelight&version=" + RB_DNS_VERSION + "&pass=" + RB_DNS_PASSWORD + "&tl=1" + "&port=" + RB_DNS_ACCESS_PORT + "&device_name=" + RB_DNS_DEVICE_NAME + "&localip=" + String(WiFi.localIP()));  //Specify request destination
   #endif
   int httpCode = http.GET();  
    if (httpCode > 0) { 
