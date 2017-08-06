@@ -12,6 +12,7 @@ A smart light control for pet cages with simple and easy to use WebUI and API.
 * WebUI
 * RTC for automatic mode
 * easy to use http-get api
+* weekly schedule for each channel
 
 # PARTS
 Partlist for a two channel configuration
