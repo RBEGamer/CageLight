@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "35a" //added schedule for each channel
+#define CAGE_LIGHT_VERSION "36a" //fixing multi sched stuff
 #define RB_DNS_VERSION "9"
 
 
@@ -29,8 +29,9 @@ const int switch_1_pin = 15;
 
 //OUTPUT SETTINGS
 #define AMOUNT_OUTPUTS 2 //SET YOUR OUTPUT COUNT HERE HERE
-const int output_relais_pins[2] = {14,12};
-bool intert_outputs = false;
+const int output_relais_pins[AMOUNT_OUTPUTS] = {14,12}; //SET YOUR PINS HERE
+const String channel_names[AMOUNT_OUTPUTS] = {"Kaefig","Regal"}; //name your channels here
+bool intert_outputs = true;
 
 
 //ADD HERE YOUR WIFI SSIDs AND PWs
@@ -40,34 +41,39 @@ const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527
 
 //WEB UI SETTINGS
 #define WEBSERVER_PORT 80 //set the port for the webserver eg 80 8080
-#define MDNS_NAME "cagelight" // set hostname for http://cagelight.local<port>
+#define MDNS_NAME "cagelight" // set hostname for http://cagelight.local:<port>
 #define WEBSITE_TITLE "CAGE_LIGHT_GITHUB" //name your device
+
+
+
+
 
 
 /* DNS SERVER HOSTES BY ME  
 please see the read.md on https://github.com/RBEGamer/CageLight/ for config and send data information
 */
-#define RB_DNS //USE THE RB DNS SERVICE
+//#define RB_DNS //USE THE RB DNS SERVICE
 //#define _RB_DNS_DEBUG //DEBUG SETTINGS FOR THE RB_DNS_SERVICE
+
 #if defined(RB_DNS)
 #if defined(_RB_DNS_DEBUG)
 String RB_DNS_UUID = "00000000-1234-1234-1234-000000000000";
 #else
 String RB_DNS_UUID = "00000000-0000-0000-0000-000000000000"; 
 #endif
-const String RB_DNS_PASSWORD = "62260545"; //change this <-------------------
+const String RB_DNS_PASSWORD = "12345678"; //change this <-------------------
 #define RB_DNS_ACCESS_PORT WEBSERVER_PORT
 #define RB_DNS_DEVICE_NAME WEBSITE_TITLE //you can set here a username for login
-const String RB_DNS_HOST = "http://109.230.230.209:80/";
+const String RB_DNS_HOST = "http://185.216.212.208:80/"; //change this
 const String RB_DNS_HOST_BASE_URL = RB_DNS_HOST +"rb_dns_server/update.php"; // CHANGE THIS<-------------------------------
 const String RB_DNS_UUID_URL = RB_DNS_HOST +"rb_dns_server/gen_uuid.php";
 const String RB_DNS_LOGINMASK_URL = RB_DNS_HOST +"rb_dns_server/index.php";
 bool rb_dns_conf_correct = true;
 int rb_dns_uuid_len = 36; 
-const int rb_dns_uuid_max_len = 36; //change thisto 48 TODO
 unsigned long previousMillis_rbdns = 0; 
 const long interval_rbdns = 1000 * 60 * 5; //5min
 #endif
+const int rb_dns_uuid_max_len = 48; //have to be there for eeprom clacs 
 
 
 
@@ -77,6 +83,7 @@ const int  i2c_scl_pin = 4;
 const int i2c_sda_pin = 5;
 int output_relais_states[2] = { 0 };
 #define DS1307_ADRESSE 0x68 // i2c adress of the rtc
+//SERIAL
 #define SERIAL_BAUD_RATE 115200
 // END CONFIG ---------------------------------
 
@@ -96,14 +103,11 @@ const String wochentage[7] = { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Don
 #else
 const String wochentage[7] = { "Sunday", "Monday", "Thuesday", "Wednesday", "Thirstday", "Friday", "Saturday"};
 #endif
-int on_off_times_ch_1[7][2] = { {8,22} };
-int on_off_times_ch_2[7][2] = { {8,22} };
-bool on_off_enabled_ch_1 = true;
-bool on_off_enabled_ch_2 = true;
-bool on_time_switched_ch_1 = false; //FOR SCHEDULE
-bool off_time_switched_ch_1 = false;
-bool on_time_switched_ch_2 = false; //FOR SCHEDULE
-bool off_time_switched_ch_2 = false;
+int on_off_times[AMOUNT_OUTPUTS][7][2] = { {8,22},{8,22} };
+bool on_off_enabled[AMOUNT_OUTPUTS] ={true};
+bool on_time_switched[AMOUNT_OUTPUTS] = {false}; //FOR SCHEDULE
+bool off_time_switched[AMOUNT_OUTPUTS] = {false};
+
 const String phead_1 = "<!DOCTYPE html><html><head><title>";
 const String phead_2 = "</title>"
   "<meta http-equiv='content-type' content='text/html; charset=utf-8'>"
@@ -213,38 +217,25 @@ void setup_wifi(){
 void restore_eeprom_values(){
   //READ SCHEDULE TIMES
   int ei = 0;
-  on_off_times_ch_1[0][0] = EEPROM.read(ei++);
-  on_off_times_ch_1[0][1] = EEPROM.read(ei++);
-  on_off_times_ch_1[1][0] = EEPROM.read(ei++);
-  on_off_times_ch_1[1][1] = EEPROM.read(ei++);
-  on_off_times_ch_1[2][0] = EEPROM.read(ei++);
-  on_off_times_ch_1[2][1] = EEPROM.read(ei++);
-  on_off_times_ch_1[3][0] = EEPROM.read(ei++);
-  on_off_times_ch_1[3][1] = EEPROM.read(ei++);
-  on_off_times_ch_1[4][0] = EEPROM.read(ei++);
-  on_off_times_ch_1[4][1] = EEPROM.read(ei++);
-  on_off_times_ch_1[5][0] = EEPROM.read(ei++);
-  on_off_times_ch_1[5][1] = EEPROM.read(ei++);
-  on_off_times_ch_1[6][0] = EEPROM.read(ei++);
-  on_off_times_ch_1[6][1] = EEPROM.read(ei++);
-  on_off_enabled_ch_1 = EEPROM.read(ei++);
-  
-  on_off_times_ch_2[0][0] = EEPROM.read(ei++);
-  on_off_times_ch_2[0][1] = EEPROM.read(ei++);
-  on_off_times_ch_2[1][0] = EEPROM.read(ei++);
-  on_off_times_ch_2[1][1] = EEPROM.read(ei++);
-  on_off_times_ch_2[2][0] = EEPROM.read(ei++);
-  on_off_times_ch_2[2][1] = EEPROM.read(ei++);
-  on_off_times_ch_2[3][0] = EEPROM.read(ei++);
-  on_off_times_ch_2[3][1] = EEPROM.read(ei++);
-  on_off_times_ch_2[4][0] = EEPROM.read(ei++);
-  on_off_times_ch_2[4][1] = EEPROM.read(ei++);
-  on_off_times_ch_2[5][0] = EEPROM.read(ei++);
-  on_off_times_ch_2[5][1] = EEPROM.read(ei++);
-  on_off_times_ch_2[6][0] = EEPROM.read(ei++);
-  on_off_times_ch_2[6][1] = EEPROM.read(ei++);
-  on_off_enabled_ch_2 = EEPROM.read(ei++);
-  
+  for(int j = 0;j < AMOUNT_OUTPUTS;j++){
+  on_off_times[j][0][0] = EEPROM.read(ei++);
+  on_off_times[j][0][1] = EEPROM.read(ei++);
+  on_off_times[j][1][0] = EEPROM.read(ei++);
+  on_off_times[j][1][1] = EEPROM.read(ei++);
+  on_off_times[j][2][0] = EEPROM.read(ei++);
+  on_off_times[j][2][1] = EEPROM.read(ei++);
+  on_off_times[j][3][0] = EEPROM.read(ei++);
+  on_off_times[j][3][1] = EEPROM.read(ei++);
+  on_off_times[j][4][0] = EEPROM.read(ei++);
+  on_off_times[j][4][1] = EEPROM.read(ei++);
+  on_off_times[j][5][0] = EEPROM.read(ei++);
+  on_off_times[j][5][1] = EEPROM.read(ei++);
+  on_off_times[j][6][0] = EEPROM.read(ei++);
+  on_off_times[j][6][1] = EEPROM.read(ei++);
+  }
+  for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+  on_off_enabled[i] = EEPROM.read(ei++);
+  }
    for(int i = 0; i < AMOUNT_OUTPUTS; i++){
    output_relais_states[i] = EEPROM.read(ei++);
     }
@@ -284,37 +275,26 @@ if(EEPROM.read(ei++) > 0){
 void save_values_to_eeprom(){
    int ei = 0;
    //TODO DO LOOP HERE
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[0][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[0][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[1][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[1][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[2][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[2][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[3][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[3][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[4][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[4][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[5][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[5][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[6][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_1[6][1]);
-     EEPROM.write(ei++, on_off_enabled_ch_1);
+   for(int j = 0;j < AMOUNT_OUTPUTS;j++){
+     EEPROM.write(ei++, (byte)on_off_times[j][0][0]);
+     EEPROM.write(ei++, (byte)on_off_times[j][0][1]);
+     EEPROM.write(ei++, (byte)on_off_times[j][1][0]);
+     EEPROM.write(ei++, (byte)on_off_times[j][1][1]);
+     EEPROM.write(ei++, (byte)on_off_times[j][2][0]);
+     EEPROM.write(ei++, (byte)on_off_times[j][2][1]);
+     EEPROM.write(ei++, (byte)on_off_times[j][3][0]);
+     EEPROM.write(ei++, (byte)on_off_times[j][3][1]);
+     EEPROM.write(ei++, (byte)on_off_times[j][4][0]);
+     EEPROM.write(ei++, (byte)on_off_times[j][4][1]);
+     EEPROM.write(ei++, (byte)on_off_times[j][5][0]);
+     EEPROM.write(ei++, (byte)on_off_times[j][5][1]);
+     EEPROM.write(ei++, (byte)on_off_times[j][6][0]);
+     EEPROM.write(ei++, (byte)on_off_times[j][6][1]);
+   }
 
-      EEPROM.write(ei++, (byte)on_off_times_ch_2[0][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[0][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[1][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[1][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[2][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[2][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[3][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[3][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[4][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[4][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[5][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[5][1]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[6][0]);
-     EEPROM.write(ei++, (byte)on_off_times_ch_2[6][1]);
-     EEPROM.write(ei++, on_off_enabled_ch_2);
+      for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+     EEPROM.write(ei++, on_off_enabled[i]);
+      }
      //SAVE LIGHT STATES
        for(int i = 0; i < AMOUNT_OUTPUTS; i++){
     EEPROM.write(ei++,output_relais_states[i]);
@@ -422,215 +402,51 @@ if(output_relais_states[i]){
 
 
 
-control_forms += "<br><h3> SCHEDULE CHANNEL 1  </h3>";
-if (on_off_enabled_ch_1) {
+control_forms += "<br><h3> SCHEDULE  </h3>";
+
+
+
+for(int i =0; i < AMOUNT_OUTPUTS;i++){
+  control_forms += "<br><h3> CHANNEL " + channel_names[i] + "</h3>";
+if (on_off_enabled[i]) {
   control_forms += "<form name='btn_sched_tab' action='/' method='GET'>";
   control_forms += "<table><tr><th> DAY </th><th> ON TIME </th><th> OFF TIME </th></tr>";
-  control_forms += "<tr><td>SUNDAY</td><td><input type='number' min='0' max='23' name='set_sched_sun_on_ch_1' value='" + String(on_off_times_ch_1[0][0]) + "' /></td><td><input type='number' min='0' max='23' name='set_sched_sun_off_ch_1' value='" + String(on_off_times_ch_1[0][1]) + "' /></td></tr>";
-  control_forms += "<tr><td>MONDAY</td><td><input type='number' min='0' max='23' name='set_sched_mon_on_ch_1' value='" + String(on_off_times_ch_1[1][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_mon_off_ch_1' value='" + String(on_off_times_ch_1[1][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>TUESDAY</td><td><input type='number' min='0' max='23' name='set_sched_tue_on_ch_1' value='" + String(on_off_times_ch_1[2][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_tue_off_ch_1' value='" + String(on_off_times_ch_1[2][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>WEDNESDAY</td><td><input type='number' min='0' max='23' name='set_sched_wed_on_ch_1' value='" + String(on_off_times_ch_1[3][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_wed_off_ch_1' value='" + String(on_off_times_ch_1[3][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>THURSTDAY</td><td><input type='number' min='0' max='23' name='set_sched_thu_on_ch_1' value='" + String(on_off_times_ch_1[4][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_thu_off_ch_1' value='" + String(on_off_times_ch_1[4][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>FRIDAY</td><td><input type='number' min='0' max='23' name='set_sched_fri_on_ch_1' value='" + String(on_off_times_ch_1[5][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_fri_off_ch_1' value='" + String(on_off_times_ch_1[5][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>SATURDAY</td><td><input type='number' min='0' max='23' name='set_sched_sat_on_ch_1' value='" + String(on_off_times_ch_1[6][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_sat_off_ch_1' value='" + String(on_off_times_ch_1[6][1]) + "'/></td></tr>";
+  control_forms += "<tr><td>SUNDAY</td><td><input type='number' min='0' max='23' name='set_sched_sun_on_" + String(i)+ "' value='" + String(on_off_times[i][0][0]) + "' /></td><td><input type='number' min='0' max='23' name='set_sched_sun_off_" + String(i)+ "' value='" + String(on_off_times[i][0][1]) + "' /></td></tr>";
+  control_forms += "<tr><td>MONDAY</td><td><input type='number' min='0' max='23' name='set_sched_mon_on_" + String(i)+ "' value='" + String(on_off_times[i][1][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_mon_off_" + String(i)+ "' value='" + String(on_off_times[i][1][1]) + "'/></td></tr>";
+  control_forms += "<tr><td>TUESDAY</td><td><input type='number' min='0' max='23' name='set_sched_tue_on_" + String(i)+ "' value='" + String(on_off_times[i][2][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_tue_off_" + String(i)+ "' value='" + String(on_off_times[i][2][1]) + "'/></td></tr>";
+  control_forms += "<tr><td>WEDNESDAY</td><td><input type='number' min='0' max='23' name='set_sched_wed_on_" + String(i)+ "' value='" + String(on_off_times[i][3][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_wed_off_" + String(i)+ "' value='" + String(on_off_times[i][3][1]) + "'/></td></tr>";
+  control_forms += "<tr><td>THURSTDAY</td><td><input type='number' min='0' max='23' name='set_sched_thu_on_" + String(i)+ "' value='" + String(on_off_times[i][4][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_thu_off_" + String(i)+ "' value='" + String(on_off_times[i][4][1]) + "'/></td></tr>";
+  control_forms += "<tr><td>FRIDAY</td><td><input type='number' min='0' max='23' name='set_sched_fri_on_" + String(i)+ "' value='" + String(on_off_times[i][5][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_fri_off_" + String(i)+ "' value='" + String(on_off_times[i][5][1]) + "'/></td></tr>";
+  control_forms += "<tr><td>SATURDAY</td><td><input type='number' min='0' max='23' name='set_sched_sat_on_" + String(i)+ "' value='" + String(on_off_times[i][6][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_sat_off_" + String(i)+ "' value='" + String(on_off_times[i][6][1]) + "'/></td></tr>";
   control_forms += "</table><br><input type = 'submit' value = 'SAVE TIMES' / ></form><br>";
 
-  control_forms += "<form name='btn_sch_on_ch_1' action='/' method='GET'>"
-    "<input type='hidden' value='sched_disable_ch_1' name='sched_disable_ch_1' />"
-    "<input type='submit' value='DISABLE SCHEDULE CHANNEL 1'/>"
+  control_forms += "<form name='btn_sch_on' action='/' method='GET'>"
+    "<input type='hidden' value='sched_disable' name='sched_disable_" + String(i)+ "' />"
+    "<input type='submit' value='DISABLE SCHEDULE'/>"
     "</form>";
 }
 else {
   control_forms += "<br><form name='btn_sch_on' action='/' method='GET'>"
-    "<input type='hidden' value='sched_enable_ch_1' name='sched_enable_ch_1' />"
-    "<input type='submit' value='ENABLE SCHEDULE CHANNEL 1'/>"
+    "<input type='hidden' value='sched_enable' name='sched_enable_" + String(i)+ "' />"
+    "<input type='submit' value='ENABLE SCHEDULE'/>"
     "</form>";
 }
+}//end for 
 
-
-control_forms += "<br><h3> SCHEDULE CHANNEL 2  </h3>";
-if (on_off_enabled_ch_2) {
-  control_forms += "<form name='btn_sched_tab' action='/' method='GET'>";
-  control_forms += "<table><tr><th> DAY </th><th> ON TIME </th><th> OFF TIME </th></tr>";
-  control_forms += "<tr><td>SUNDAY</td><td><input type='number' min='0' max='23' name='set_sched_sun_on_ch_2' value='" + String(on_off_times_ch_2[0][0]) + "' /></td><td><input type='number' min='0' max='23' name='set_sched_sun_off_ch_2' value='" + String(on_off_times_ch_2[0][1]) + "' /></td></tr>";
-  control_forms += "<tr><td>MONDAY</td><td><input type='number' min='0' max='23' name='set_sched_mon_on_ch_2' value='" + String(on_off_times_ch_2[1][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_mon_off_ch_2' value='" + String(on_off_times_ch_2[1][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>TUESDAY</td><td><input type='number' min='0' max='23' name='set_sched_tue_on_ch_2' value='" + String(on_off_times_ch_2[2][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_tue_off_ch_2' value='" + String(on_off_times_ch_2[2][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>WEDNESDAY</td><td><input type='number' min='0' max='23' name='set_sched_wed_on_ch_2' value='" + String(on_off_times_ch_2[3][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_wed_off_ch_2' value='" + String(on_off_times_ch_2[3][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>THURSTDAY</td><td><input type='number' min='0' max='23' name='set_sched_thu_on_ch_2' value='" + String(on_off_times_ch_2[4][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_thu_off_ch_2' value='" + String(on_off_times_ch_2[4][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>FRIDAY</td><td><input type='number' min='0' max='23' name='set_sched_fri_on_ch_2' value='" + String(on_off_times_ch_2[5][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_fri_off_ch_2' value='" + String(on_off_times_ch_2[5][1]) + "'/></td></tr>";
-  control_forms += "<tr><td>SATURDAY</td><td><input type='number' min='0' max='23' name='set_sched_sat_on_ch_2' value='" + String(on_off_times_ch_2[6][0]) + "'/></td><td><input type='number' min='0' max='23' name='set_sched_sat_off_ch_2' value='" + String(on_off_times_ch_2[6][1]) + "'/></td></tr>";
-  control_forms += "</table><br><input type = 'submit' value = 'SAVE TIMES' / ></form><br>";
-
-  control_forms += "<form name='btn_sch_on_ch_2' action='/' method='GET'>"
-    "<input type='hidden' value='sched_disable_ch_2' name='sched_disable_ch_2' />"
-    "<input type='submit' value='DISABLE SCHEDULE CHANNEL 2'/>"
-    "</form>";
-}
-else {
-  control_forms += "<br><form name='btn_sch_on' action='/' method='GET'>"
-    "<input type='hidden' value='sched_enable_ch_2' name='sched_enable_ch_2' />"
-    "<input type='submit' value='ENABLE SCHEDULE CHANNEL 2'/>"
-    "</form>";
-}
 
 
 
 #if defined(RB_DNS)
 control_forms += "<br><h4> RBDNS ACTIVATED See <a href='https://github.com/RBEGamer/RB_DNS_SERVICE'>github.com/RBEGamer/RB_DNS_SERVICE</a> for information</h4>";
-
 control_forms += "<h3>PLEASE LOGIN AT :<a href='" +RB_DNS_LOGINMASK_URL + "?uuid="+ RB_DNS_UUID + "&pass=" + RB_DNS_PASSWORD +"&mode=direct'>" + RB_DNS_LOGINMASK_URL + "</a><br>";
 control_forms += "<br>  UUID : " + String(RB_DNS_UUID) + "<br>";
 control_forms += "<br> PASSWORD : " + String(RB_DNS_PASSWORD) +"<br>";
 #endif
-String api_calls = "<hr><h2>CONFIGURATION API</h2><br><br><table>"
-"<tr>"
-"<th>PARAMETER</th>"
-"<th>VALUE</th>"
-"<th>DESCRIPTION</th>"
-"</tr>"
-"<tr>"
-"<td>ls</td>"
-"<td>all_on</td>"
-"<td>Set all channels on</td>"
-"</tr>"
-"<tr>"
-"<td>ls</td>"
-"<td>all_off</td>"
-"<td>Set all channels off</td>"
-"</tr>"
-"<tr>"
-"<td>ls</td>"
-"<td>#channelid#_on</td>"
-"<td>Set channel one on</td>"
-"</tr>"
-"<tr>"
-"<td>ls</td>"
-"<td>#channelid#_off</td>"
-"<td>Set channel one off</td>"
-"</tr>"
-"<tr>"
-"<td>time_s</td>"
-"<td>&lt; seconds&gt; </td>"
-"<td>Set the seconds of the clock</td>"
-"</tr>"
-"<tr>"
-"<td>time_m</td>"
-"<td>&lt; minute&gt; </td>"
-"<td>Set the minutes of the clock</td>"
-"</tr>"
-"<tr>"
-"<td>time_h</td>"
-"<td>&lt; hours&gt; </td>"
-"<td>Set the hour of the clock</td>"
-"</tr>"
-"<tr>"
-"<td>date_d</td>"
-"<td>&lt; day&gt; </td>"
-"<td>Set the current day of the date</td>"
-"</tr>"
-"<tr>"
-"<td>date_m</td>"
-"<td>&lt; month&gt; </td>"
-"<td>Set the current month of the date</td>"
-"</tr>"
-"<tr>"
-"<td>date_y</td>"
-"<td>&lt; year&gt; </td>"
-"<td>Set the current year of the date<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_mon_on</td>"
-"<td>&lt; hour &gt</td>"
-"<td>Set the light on hour at monday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_tue_on_ch_1/2</td>"
-"<td>&lt; hour &gt</td>"
-"<td>Set the light on hour at tuesday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_wed_on_ch_1/2</td>"
-"<td>&lt; hour &gt</td>"
-"<td>Set the light on hour at wednesday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_thu_on_ch_1/2</td>"
-"<td>&lt; hour &gt</td>"
-"<td>Set the light on hour at thuesday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_fri_on_ch_1/2</td>"
-"<td>&lt; hour&gt </td>"
-"<td>Set the light on hour at friday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_sat_on_ch_1/2</td>"
-"<td>&lt; hour &gt</td>"
-"<td>Set the light on hour at saturday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_sun_on_ch_1/2</td>"
-"<td>&lt; hour&gt </td>"
-"<td>Set the light on hour at sunday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_mon_off_ch_1/2</td>"
-"<td>&lt; hour &gt</td>"
-"<td>Set the light off hour at monday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_tue_off_ch_1/2</td>"
-"<td>&lt; hour&gt </td>"
-"<td>Set the light off hour at tuesday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_wed_off_ch_1/2</td>"
-"<td>&lt; hour&gt </td>"
-"<td>Set the light off hour at wednesday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_thu_off_ch_1/2</td>"
-"<td>&lt; hour&gt </td>"
-"<td>Set the light off hour at thuesday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_fri_of_ch_1/2</td>"
-"<td>&lt; hour &gt</td>"
-"<td>Set the light off hour at friday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_sat_off_ch_1/2</td>"
-"<td>&lt; hour&gt </td>"
-"<td>Set the light off hour at saturday<br></td>"
-"</tr>"
-"<tr>"
-"<td>set_sched_sun_off_ch_1/2</td>"
-"<td>&lt; hour&gt </td>"
-"<td>Set the light off hour at sunday<br></td>"
-"</tr>"
-"<tr>"
-"<td>sched_enable_ch_1/2</td>"
-"<td> </td>"
-"<td>Enabled the timer<br></td>"
-"</tr>"
-"<tr>"
-"<td>sched_disable_ch_1/2</td>"
-"<td> </td>"
-"<td>Disable the timer<br></td>"
-"</tr>"
-"<tr>"
-"<td>invert_outputs</td>"
-"<td>0 = false 1 = true</td>"
-"<td>Invert the output states<br></td>"
-"</tr>"
-"</table>";
-
-
 
 
 
 String msg = "";
-msg = phead_1 + WEBSITE_TITLE + phead_2 + pstart + time_message + control_forms +api_calls + pend;
+msg = phead_1 + WEBSITE_TITLE + phead_2 + pstart + time_message + control_forms + pend;
 
 
   String message = "";
@@ -719,115 +535,59 @@ switch_channel(ic,false);
         was_timer_changes = true;
      }
 
-     
-     if (server.argName(i) == "set_sched_sun_on_ch_1") {
-       on_off_times_ch_1[0][0] = server.arg(i).toInt(); was_timer_changes = true;
+ for(int j =0; j < AMOUNT_OUTPUTS;j++){    
+     if (server.argName(i) == "set_sched_sun_on_" + String(j)) {
+       on_off_times[j][0][0] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_sun_off_ch_1") {
-       on_off_times_ch_1[0][1] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_sun_off_" + String(j)) {
+       on_off_times[j][0][1] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_mon_on_ch_1") {
-       on_off_times_ch_1[1][0] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_mon_on_" + String(j)) {
+       on_off_times[j][1][0] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_mon_off_ch_1") {
-       on_off_times_ch_1[1][1] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_mon_off_" + String(j)) {
+       on_off_times[j][1][1] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_tue_on_ch_1") {
-       on_off_times_ch_1[2][0] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_tue_on_" + String(j)) {
+       on_off_times[j][2][0] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_tue_off_ch_1") {
-       on_off_times_ch_1[2][1] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_tue_off_" + String(j)) {
+       on_off_times[j][2][1] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_wed_on_ch_1") {
-       on_off_times_ch_1[3][0] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_wed_on_" + String(j)) {
+       on_off_times[j][3][0] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_wed_off_ch_1") {
-       on_off_times_ch_1[3][1] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_wed_off_" + String(j)) {
+       on_off_times[j][3][1] = server.arg(i).toInt(); was_timer_changes = true;
      }
 
-     if (server.argName(i) == "set_sched_thu_on_ch_1") {
-       on_off_times_ch_1[4][0] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_thu_on_" + String(j)) {
+       on_off_times[j][4][0] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_thu_off_ch_1") {
-       on_off_times_ch_1[4][1] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_thu_off_" + String(j)) {
+       on_off_times[j][4][1] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_fri_on_ch_1") {
-       on_off_times_ch_1[5][0] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_fri_on_" + String(j)) {
+       on_off_times[j][5][0] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_fri_off_ch_1") {
-       on_off_times_ch_1[5][1] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_fri_off_" + String(j)) {
+       on_off_times[j][5][1] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_sat_on_ch_1") {
-       on_off_times_ch_1[6][0] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_sat_on_" + String(j)) {
+       on_off_times[j][6][0] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "set_sched_sat_off_ch_1") {
-       on_off_times_ch_1[6][1] = server.arg(i).toInt(); was_timer_changes = true;
+     if (server.argName(i) == "set_sched_sat_off_" + String(j)) {
+       on_off_times[j][6][1] = server.arg(i).toInt(); was_timer_changes = true;
      }
-     if (server.argName(i) == "sched_enable_ch_1") {
-       on_off_enabled_ch_1 = true;
+     if (server.argName(i) == "sched_enable_" + String(j)) {
+       on_off_enabled[j] = true;
        was_time_changed = true;
      }     
-     if (server.argName(i) == "sched_disable_ch_1") {
-       on_off_enabled_ch_1 = false;
+     if (server.argName(i) == "sched_disable_" + String(j)) {
+       on_off_enabled[j] = false;
        was_time_changed = true;
      }
-
-
-
-
-
- if (server.argName(i) == "set_sched_sun_on_ch_2") {
-       on_off_times_ch_2[0][0] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_sun_off_ch_2") {
-       on_off_times_ch_2[0][1] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_mon_on_ch_2") {
-       on_off_times_ch_2[1][0] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_mon_off_ch_2") {
-       on_off_times_ch_2[1][1] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_tue_on_ch_2") {
-       on_off_times_ch_2[2][0] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_tue_off_ch_2") {
-       on_off_times_ch_2[2][1] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_wed_on_ch_2") {
-       on_off_times_ch_2[3][0] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_wed_off_ch_2") {
-       on_off_times_ch_2[3][1] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-
-     if (server.argName(i) == "set_sched_thu_on_ch_2") {
-       on_off_times_ch_2[4][0] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_thu_off_ch_2") {
-       on_off_times_ch_2[4][1] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_fri_on_ch_2") {
-       on_off_times_ch_2[5][0] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_fri_off_ch_2") {
-       on_off_times_ch_2[5][1] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_sat_on_ch_2") {
-       on_off_times_ch_2[6][0] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "set_sched_sat_off_ch_2") {
-       on_off_times_ch_2[6][1] = server.arg(i).toInt(); was_timer_changes = true;
-     }
-     if (server.argName(i) == "sched_enable_ch_2") {
-       on_off_enabled_ch_2 = true;
-       was_time_changed = true;
-     }     
-     if (server.argName(i) == "sched_disable_ch_2") {
-       on_off_enabled_ch_2 = false;
-       was_time_changed = true;
-     }
-
+ }
 
 
 
@@ -859,58 +619,36 @@ void handleNotFound() {
 
 }
 void process_schedule(){
-  if (on_off_enabled_ch_1) {
-   // Serial.println(stunde == on_off_times[wochentag][0] && !on_time_switched);
+  for(int j = 0; j < AMOUNT_OUTPUTS; j++){
+  if (on_off_enabled[j]) {
+    Serial.println(stunde == on_off_times[j][wochentag][0] && !on_time_switched[j]);
    //ON
-    if (stunde == on_off_times_ch_1[wochentag][0]  && !on_time_switched_ch_1) {
-     switch_channel(0,1);
-      on_time_switched_ch_1 = true;
+    if (stunde == on_off_times[j][wochentag][0]  && !on_time_switched[j]) {
+     switch_channel(j,true);
+      on_time_switched[j] = true;
     }
     else {
-      if ( on_off_times_ch_1[wochentag][0] != stunde) {
-        on_time_switched_ch_1 = false;
+      if ( on_off_times[j][wochentag][0] != stunde) {
+        on_time_switched[j] = false;
       }
     }
     //OFF
-    if (stunde == on_off_times_ch_1[wochentag][1] && !off_time_switched_ch_1) {
-       switch_channel(0,0);
-      off_time_switched_ch_1 = true;
+    if (stunde == on_off_times[j][wochentag][1] && !off_time_switched[j]) {
+     switch_channel(j,false);
+      off_time_switched[j] = true;
     }
     else {
-      if ( on_off_times_ch_1[wochentag][1] != stunde) {
-        off_time_switched_ch_1 = false;
+      if ( on_off_times[j][wochentag][1] != stunde) {
+        off_time_switched[j] = false;
       }
     }
-  }
 
-
-
-    if (on_off_enabled_ch_2) {
-   // Serial.println(stunde == on_off_times[wochentag][0] && !on_time_switched);
-   //ON
-    if (stunde == on_off_times_ch_2[wochentag][0]  && !on_time_switched_ch_2) {
-     switch_channel(1,1);
-      on_time_switched_ch_2 = true;
-    }
-    else {
-      if ( on_off_times_ch_2[wochentag][0] != stunde) {
-        on_time_switched_ch_2 = false;
-      }
-    }
-    //OFF
-    if (stunde == on_off_times_ch_2[wochentag][1] && !off_time_switched_ch_2) {
-       switch_channel(1,0);
-      off_time_switched_ch_2 = true;
-    }
-    else {
-      if ( on_off_times_ch_2[wochentag][1] != stunde) {
-        off_time_switched_ch_2 = false;
-      }
-    }
   }
   }
+}
 
 void request_uuid(){
+#if defined(RB_DNS)
   Serial.println("req uuid");
   HTTPClient http;  //Declare an object of class HTTPClient
 http.begin(RB_DNS_UUID_URL + "?type=cagelight&version=" + CAGE_LIGHT_VERSION);
@@ -928,6 +666,7 @@ http.begin(RB_DNS_UUID_URL + "?type=cagelight&version=" + CAGE_LIGHT_VERSION);
       delay(5000);
       }
   }
+  #endif
   }
 
 void make_http_requiest_to_dns_server(){
@@ -983,8 +722,11 @@ void setup ( void ) {
 
     
   //READ TIMES
-  EEPROM.begin(128 + AMOUNT_OUTPUTS + rb_dns_uuid_max_len + (7*2*2));
-  
+  #if defined(RB_DNS)
+  EEPROM.begin(64 + AMOUNT_OUTPUTS + rb_dns_uuid_max_len + (7*2*AMOUNT_OUTPUTS));
+  #else
+   EEPROM.begin(64 + AMOUNT_OUTPUTS  + (7*2*AMOUNT_OUTPUTS));
+  #endif
 restore_eeprom_values();
  for(int i = 0; i < AMOUNT_OUTPUTS; i++){
   switch_channel(i,output_relais_states[i], false);
@@ -992,12 +734,10 @@ restore_eeprom_values();
 
 
 
-
-  off_time_switched_ch_1 = false;
-  on_time_switched_ch_1 = false;
-    off_time_switched_ch_2 = false;
-  on_time_switched_ch_2 = false;
-  
+for(int i = 0;i <AMOUNT_OUTPUTS;i++){
+  off_time_switched[i] = false;
+  on_time_switched[i] = false;
+}
   //CLOCK SETUP
   Wire.begin(i2c_scl_pin,i2c_sda_pin);
   jahr = 17;
