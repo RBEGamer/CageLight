@@ -16,7 +16,7 @@ A smart light control for pet cages with simple and easy to use WebUI and API.
 
 # PARTS
 Partlist for a two channel configuration
-* ESP8266 module (I used the NodeMCU V1.1 board)
+* ESP8266 module (I used the NodeMCU V3 board)
 * 2 channel relais card
 * DS1307 RTC module
 * 12V power supply (12V for the led strips, min 5V)
