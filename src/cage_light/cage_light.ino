@@ -371,9 +371,9 @@ void switch_channel(int _chid, bool _val, bool _wreep = true){
     }
 
   if(_val){
-    pwm.setPWM(output_pwm_channel_id[_chid],0, output_brightness_on[_chid]);
+    pwm.setPWM(output_pwm_channel_id[_chid],0, map(output_brightness_on[_chid],0, 255, 0, 4096));
   }else{
-    pwm.setPWM(output_pwm_channel_id[_chid],0, output_brightness_off[_chid]);
+    pwm.setPWM(output_pwm_channel_id[_chid],0, map(output_brightness_off[_chid],0, 255, 0, 4096));
     }
   
 
@@ -462,12 +462,12 @@ if (on_off_enabled[i]) {
     "</form>";
 
     control_forms += "<form name='set_on_pwm' action='/' method='GET'>"
-    "<input type='number' min='0' max='4096' value='"+String(output_brightness_on[i])+"' name='setpwmon" + String(i)+ "' />"
+    "<input type='number' min='0' max='255' value='"+String(output_brightness_on[i])+"' name='setpwmon" + String(i)+ "' />"
     "<input type='submit' value='SET PWM ON VALUE'/>"
     "</form>";
 
-    control_forms += "<form name='set_on_pwm' action='/' method='GET'>"
-    "<input type='number' min='0' max='4096' value='"+String(output_brightness_off[i])+"' name='setpwmoff" + String(i)+ "' />"
+    control_forms += "<form name='set_off_pwm' action='/' method='GET'>"
+    "<input type='number' min='0' max='255' value='"+String(output_brightness_off[i])+"' name='setpwmoff" + String(i)+ "' />"
     "<input type='submit' value='SET PWM OFF VALUE'/>"
     "</form>";
     
@@ -644,7 +644,7 @@ switch_channel(ic,false);
        output_brightness_on[j] = server.arg(i).toInt(); was_timer_changes = true;
      }
     if (server.argName(i) == "setpwmoff" + String(j)) {
-       output_brightness_on[j] = server.arg(i).toInt(); was_timer_changes = true;
+       output_brightness_off[j] = server.arg(i).toInt(); was_timer_changes = true;
      }
 
      
@@ -814,7 +814,12 @@ for(int i = 0;i <AMOUNT_OUTPUTS;i++){
     
   get_time_from_rtc();
   process_schedule();
+
     
+    pwm.begin();
+  pwm.setPWMFreq(1600);
+
+  
 setup_wifi();
 
 
