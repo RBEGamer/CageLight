@@ -371,15 +371,26 @@ void switch_channel(int _chid, bool _val, bool _wreep = true){
   output_relais_states[_chid] = _val;
     if(intert_outputs){ 
         digitalWrite(output_relais_pins[_chid], !_val);
-    }else{ 
-        digitalWrite(output_relais_pins[_chid], _val);
-    }
 
-  if(_val){
+        if(_val){
     target_pwm_channel_out[_chid] = output_brightness_on[_chid];
   }else{
     target_pwm_channel_out[_chid] = output_brightness_off[_chid];
     }
+
+    
+    }else{ 
+        digitalWrite(output_relais_pins[_chid], _val);
+
+        if(_val){
+    target_pwm_channel_out[_chid] = output_brightness_off[_chid];
+  }else{
+    target_pwm_channel_out[_chid] = output_brightness_on[_chid];
+    }
+    }
+
+
+  
   
 
     
@@ -403,7 +414,7 @@ void handleRoot() {
 
 String time_message = "TIME : ";
 time_message += "<form name = 'btn_time_set' action = '/' method = 'GET'>";
-time_message += "Current Time : <input type='number' name='date_d' min='0' max='31' value='" + String(tag) + "'/>.<input type='number' name='date_m' min='0' max='12' value='" + String(monat) + "'/>.<input type='number' name='date_y' min='0' max='99' value='" + String(jahr) + "'/> (" + wochentage[wochentag] +") <input type='number' name='time_h' min='0' max='23' value='" + String(stunde) + "'/>:<input type='number' name='time_m' min='0' max='59' value='" + String(minute) + "'/>:<input type='number' name='time_s' min='0' max='59' value='" + String(sekunde) + "'/><br /><input type='submit' value='SAVE TIME'/>";
+time_message += "Current Time dd/mm/yy: <input type='number' name='date_d' min='0' max='31' value='" + String(tag) + "'/>.<input type='number' name='date_m' min='0' max='12' value='" + String(monat) + "'/>.<input type='number' name='date_y' min='0' max='99' value='" + String(jahr) + "'/> (" + wochentage[wochentag] +") Time (hh/mm/ss):<input type='number' name='time_h' min='0' max='23' value='" + String(stunde) + "'/>:<input type='number' name='time_m' min='0' max='59' value='" + String(minute) + "'/>:<input type='number' name='time_s' min='0' max='59' value='" + String(sekunde) + "'/><br /><input type='submit' value='SAVE TIME'/>";
 time_message += "</form>";
 
 
@@ -425,7 +436,7 @@ control_forms += "<form name='btn_off' action='/' method='GET'>"
 
 
 for(int i = 0; i < AMOUNT_OUTPUTS;i++){
-  control_forms += "<br><h3> CHANNEL " + String(i) + " CONTROL  </h3>";
+  control_forms += "<br><h3> CHANNEL " + String(channel_names[i]) + " CONTROL  </h3>";
 
 if(output_relais_states[i]){
   control_forms += "<form name='btn_ofsf' action='/' method='GET'>"
@@ -880,7 +891,7 @@ delay(5000);
 
 
 
-  
+  int fadepwm = 0;
 void loop ( void ) {
 
   
@@ -940,21 +951,28 @@ unsigned long currentMillis = millis();
 //PWM FEED
  if (currentMillis - previousMillis_pwmfade >= interval_pwmfade) {
   previousMillis_pwmfade = currentMillis;
-for(int i = 0;i <AMOUNT_OUTPUTS;i++){
+for(int i = 0;i <1;i++){
 //target_pwm_channel_out current_pwm_channel_out
   if(abs(current_pwm_channel_out[i] - target_pwm_channel_out[i]) > 0){
     if(current_pwm_channel_out[i] < target_pwm_channel_out[i]){
         current_pwm_channel_out[i]++;
     }else if(current_pwm_channel_out[i] > target_pwm_channel_out[i]){
         current_pwm_channel_out[i]--;
-    }else{
-      current_pwm_channel_out[i] = 0;
     }
-    pwm.setPWM(output_pwm_channel_id[i],0, map(current_pwm_channel_out[i],0, 255, 0, 4096)); 
-  }
-}
-}
 
+    
+    fadepwm = map(current_pwm_channel_out[i],0, 255, 0, 4095);
+    if(fadepwm < 0){
+      fadepwm = 0;
+      }else if(fadepwm > 4095){
+      fadepwm = 4095;
+      }
+    pwm.setPWM(output_pwm_channel_id[i],0, fadepwm); 
+    Serial.println("out:" + String(fadepwm));
+  
+}
+}
+}
  
     delay(30);
 }
