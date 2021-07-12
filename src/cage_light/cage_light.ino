@@ -1,5 +1,5 @@
 
-#define CAGE_LIGHT_VERSION "36a" //fixing multi sched stuff
+#define CAGE_LIGHT_VERSION "37a" //fixing multi sched stuff
 #define RB_DNS_VERSION "9"
 
 
@@ -16,6 +16,7 @@ ESP8266WiFiMulti wifiMulti;
 #include <WiFiUdp.h>
 #include <Wire.h>
 #include <EEPROM.h>
+#include <Adafruit_PWMServoDriver.h>
 
 //CONFIG ----------------------------------------
 
@@ -31,12 +32,16 @@ const int switch_1_pin = 15;
 #define AMOUNT_OUTPUTS 2 //SET YOUR OUTPUT COUNT HERE HERE
 const int output_relais_pins[AMOUNT_OUTPUTS] = {14,12}; //SET YOUR PINS HERE
 const String channel_names[AMOUNT_OUTPUTS] = {"Kaefig","Regal"}; //name your channels here
+int output_brightness_on[AMOUNT_OUTPUTS] = {2048,2048}; // 0- 2048
+int output_brightness_off[AMOUNT_OUTPUTS] = {10,10};
+const int output_pwm_channel_id[AMOUNT_OUTPUTS] = {0,1}; //OUTPUT CHANNEL ID OF PCA BOARD 0-15
+
 bool intert_outputs = true;
 
 
 //ADD HERE YOUR WIFI SSIDs AND PWs
-#define WIFI_AP_COUNT 2
-const char* wifi_aps[WIFI_AP_COUNT][2] = {{"FRITZ!Box Fon WLAN 7390","6226054527192856"},{"Keunecke","9121996wyrich"}};
+#define WIFI_AP_COUNT 3
+const char* wifi_aps[WIFI_AP_COUNT][2] = {{"ProDevMo","6226054527192856"},{"FRITZ!Box Fon WLAN 7390","6226054527192856"},{"Keunecke","9121996wyrich"}};
 
 
 //WEB UI SETTINGS
@@ -87,6 +92,8 @@ int output_relais_states[2] = { 0 };
 #define SERIAL_BAUD_RATE 115200
 // END CONFIG ---------------------------------
 
+//INIT PCA9685
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 //FUNC DEC
 byte decToBcd(byte val);
@@ -239,8 +246,17 @@ void restore_eeprom_values(){
    for(int i = 0; i < AMOUNT_OUTPUTS; i++){
    output_relais_states[i] = EEPROM.read(ei++);
     }
-    
 
+    for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+   output_brightness_on[i] = EEPROM.read(ei++);
+    }
+
+    for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+   output_brightness_off[i] = EEPROM.read(ei++);
+    }
+
+
+    
     //READ UUID FROM EEPROM
 #if defined(RB_DNS)
  rb_dns_uuid_len = EEPROM.read(ei++);
@@ -299,6 +315,17 @@ void save_values_to_eeprom(){
        for(int i = 0; i < AMOUNT_OUTPUTS; i++){
     EEPROM.write(ei++,output_relais_states[i]);
     }
+
+    //SAVE PWM ON VALUES
+    for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+        EEPROM.write(ei++,output_brightness_on[i]);
+    }
+    //SAVE PWM OFF VALUES
+    for(int i = 0; i < AMOUNT_OUTPUTS; i++){
+        EEPROM.write(ei++,output_brightness_off[i]);
+    }
+
+   
     
 
 #if defined(RB_DNS)
@@ -342,6 +369,15 @@ void switch_channel(int _chid, bool _val, bool _wreep = true){
     }else{ 
         digitalWrite(output_relais_pins[_chid], _val);
     }
+
+  if(_val){
+    pwm.setPWM(output_pwm_channel_id[_chid],0, output_brightness_on[_chid]);
+  }else{
+    pwm.setPWM(output_pwm_channel_id[_chid],0, output_brightness_off[_chid]);
+    }
+  
+
+    
   if(_wreep){
     save_values_to_eeprom();
   }
@@ -424,6 +460,17 @@ if (on_off_enabled[i]) {
     "<input type='hidden' value='sched_disable' name='sched_disable_" + String(i)+ "' />"
     "<input type='submit' value='DISABLE SCHEDULE'/>"
     "</form>";
+
+    control_forms += "<form name='set_on_pwm' action='/' method='GET'>"
+    "<input type='number' min='0' max='4096' value='"+String(output_brightness_on[i])+"' name='setpwmon" + String(i)+ "' />"
+    "<input type='submit' value='SET PWM ON VALUE'/>"
+    "</form>";
+
+    control_forms += "<form name='set_on_pwm' action='/' method='GET'>"
+    "<input type='number' min='0' max='4096' value='"+String(output_brightness_off[i])+"' name='setpwmoff" + String(i)+ "' />"
+    "<input type='submit' value='SET PWM OFF VALUE'/>"
+    "</form>";
+    
 }
 else {
   control_forms += "<br><form name='btn_sch_on' action='/' method='GET'>"
@@ -522,6 +569,10 @@ switch_channel(ic,false);
        jahr = server.arg(i).toInt();
        was_time_changed = true;
      }
+
+
+
+     
      
      if (server.argName(i) == "invert_outputs") {
        if(server.arg(i).toInt() > 0){
@@ -587,6 +638,16 @@ switch_channel(ic,false);
        on_off_enabled[j] = false;
        was_time_changed = true;
      }
+
+
+    if (server.argName(i) == "setpwmon" + String(j)) {
+       output_brightness_on[j] = server.arg(i).toInt(); was_timer_changes = true;
+     }
+    if (server.argName(i) == "setpwmoff" + String(j)) {
+       output_brightness_on[j] = server.arg(i).toInt(); was_timer_changes = true;
+     }
+
+     
  }
 
 
