@@ -33,10 +33,14 @@ const int switch_1_pin = 15;
 const int output_relais_pins[AMOUNT_OUTPUTS] = {14,12}; //SET YOUR PINS HERE
 const String channel_names[AMOUNT_OUTPUTS] = {"Kaefig","Regal"}; //name your channels here
 int output_brightness_on[AMOUNT_OUTPUTS] = {2048,2048}; // 0- 2048
-int output_brightness_off[AMOUNT_OUTPUTS] = {10,10};
+int output_brightness_off[AMOUNT_OUTPUTS] = {0,0};
 const int output_pwm_channel_id[AMOUNT_OUTPUTS] = {0,1}; //OUTPUT CHANNEL ID OF PCA BOARD 0-15
+int current_pwm_channel_out[AMOUNT_OUTPUTS] = {0,0};
+int target_pwm_channel_out[AMOUNT_OUTPUTS] = {4096,4096};
 
 bool intert_outputs = true;
+
+
 
 
 //ADD HERE YOUR WIFI SSIDs AND PWs
@@ -49,7 +53,8 @@ const char* wifi_aps[WIFI_AP_COUNT][2] = {{"ProDevMo","6226054527192856"},{"FRIT
 #define MDNS_NAME "cagelight" // set hostname for http://cagelight.local:<port>
 #define WEBSITE_TITLE "CAGE_LIGHT_GITHUB" //name your device
 
-
+unsigned long previousMillis_pwmfade = 0;
+const long interval_pwmfade = 500;
 
 
 
@@ -371,9 +376,9 @@ void switch_channel(int _chid, bool _val, bool _wreep = true){
     }
 
   if(_val){
-    pwm.setPWM(output_pwm_channel_id[_chid],0, map(output_brightness_on[_chid],0, 255, 0, 4096));
+    target_pwm_channel_out[_chid] = output_brightness_on[_chid];
   }else{
-    pwm.setPWM(output_pwm_channel_id[_chid],0, map(output_brightness_off[_chid],0, 255, 0, 4096));
+    target_pwm_channel_out[_chid] = output_brightness_off[_chid];
     }
   
 
@@ -462,12 +467,12 @@ if (on_off_enabled[i]) {
     "</form>";
 
     control_forms += "<form name='set_on_pwm' action='/' method='GET'>"
-    "<input type='number' min='0' max='255' value='"+String(output_brightness_on[i])+"' name='setpwmon" + String(i)+ "' />"
+    "<input type='number' min='0' max='255' steps='5' value='"+String(output_brightness_on[i])+"' name='setpwmon" + String(i)+ "' />"
     "<input type='submit' value='SET PWM ON VALUE'/>"
     "</form>";
 
     control_forms += "<form name='set_off_pwm' action='/' method='GET'>"
-    "<input type='number' min='0' max='255' value='"+String(output_brightness_off[i])+"' name='setpwmoff" + String(i)+ "' />"
+    "<input type='number' min='0' max='255' steps='5' value='"+String(output_brightness_off[i])+"' name='setpwmoff" + String(i)+ "' />"
     "<input type='submit' value='SET PWM OFF VALUE'/>"
     "</form>";
     
@@ -510,10 +515,10 @@ volatile bool was_timer_changes = false;
    for ( uint8_t i = 0; i < server.args(); i++ ) {
     message += " " + server.argName ( i ) + ": " + server.arg ( i ) + "\n";
    if(server.argName(i) == "ls" && server.arg(i) == "all_on"){
-switch_all_on();
+      switch_all_on();
    }
       else if(server.argName(i) == "ls" && server.arg(i) == "all_off"){
-switch_all_off();
+      switch_all_off();
    }else{
   
 
@@ -798,6 +803,7 @@ restore_eeprom_values();
 for(int i = 0;i <AMOUNT_OUTPUTS;i++){
   off_time_switched[i] = false;
   on_time_switched[i] = false;
+  target_pwm_channel_out[i] = 0;
 }
   //CLOCK SETUP
   Wire.begin(i2c_scl_pin,i2c_sda_pin);
@@ -919,10 +925,9 @@ delay(50);
 //HANDLE WEBSERVER
     server.handleClient();
 
-
+unsigned long currentMillis = millis();
 //SEND RBDNS REQUEST
 #if defined(RB_DNS)
-unsigned long currentMillis = millis();
   if (currentMillis - previousMillis_rbdns >= interval_rbdns) {
     previousMillis_rbdns = currentMillis;
     make_http_requiest_to_dns_server();
@@ -932,6 +937,25 @@ unsigned long currentMillis = millis();
 
 
 
+//PWM FEED
+ if (currentMillis - previousMillis_pwmfade >= interval_pwmfade) {
+  previousMillis_pwmfade = currentMillis;
+for(int i = 0;i <AMOUNT_OUTPUTS;i++){
+//target_pwm_channel_out current_pwm_channel_out
+  if(abs(current_pwm_channel_out[i] - target_pwm_channel_out[i]) > 0){
+    if(current_pwm_channel_out[i] < target_pwm_channel_out[i]){
+        current_pwm_channel_out[i]++;
+    }else if(current_pwm_channel_out[i] > target_pwm_channel_out[i]){
+        current_pwm_channel_out[i]--;
+    }else{
+      current_pwm_channel_out[i] = 0;
+    }
+    pwm.setPWM(output_pwm_channel_id[i],0, map(current_pwm_channel_out[i],0, 255, 0, 4096)); 
+  }
+}
+}
+
+ 
     delay(30);
 }
 
