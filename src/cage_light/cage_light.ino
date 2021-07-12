@@ -54,7 +54,7 @@ const char* wifi_aps[WIFI_AP_COUNT][2] = {{"ProDevMo","6226054527192856"},{"FRIT
 #define WEBSITE_TITLE "CAGE_LIGHT_GITHUB" //name your device
 
 unsigned long previousMillis_pwmfade = 0;
-const long interval_pwmfade = 500;
+const long interval_pwmfade = 100;
 
 
 
@@ -441,12 +441,12 @@ for(int i = 0; i < AMOUNT_OUTPUTS;i++){
 if(output_relais_states[i]){
   control_forms += "<form name='btn_ofsf' action='/' method='GET'>"
     "<input type='hidden' value='" + String(i) + "_off' name='ls' />"
-    "<input type='submit' value='"+ String(i) + " OFF'/>"
+    "<input type='submit' value='"+ channel_names[i] + " OFF'/>"
     "</form>";
 }else{
    control_forms += "<form name='btn_osaff' action='/' method='GET'>"
     "<input type='hidden' value='" + String(i) + "_on' name='ls' />"
-    "<input type='submit' value='" + String(i) +" ON'/>"
+    "<input type='submit' value='" + channel_names[i] +" ON'/>"
     "</form>";
 }
   
